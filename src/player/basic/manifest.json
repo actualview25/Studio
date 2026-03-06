@@ -1,0 +1,60 @@
+{
+  "project": {
+    "name": "مشروع تجريبي",
+    "date": "2026-03-07",
+    "version": "1.0"
+  },
+  "scenes": [
+    {
+      "id": "scene-001",
+      "name": "المدخل الرئيسي",
+      "image": "scenes/scene-001.jpg",
+      "hotspots": [
+        {
+          "id": "hotspot-001",
+          "type": "SCENE",
+          "position": { "x": 10, "y": 0, "z": 20 },
+          "data": { "targetSceneId": "scene-002", "targetSceneName": "الصالة" }
+        },
+        {
+          "id": "hotspot-002",
+          "type": "INFO",
+          "position": { "x": -5, "y": 2, "z": 15 },
+          "data": { "title": "معلومات", "content": "هذه نقطة معلومات تجريبية" }
+        }
+      ],
+      "paths": [
+        {
+          "type": "EL",
+          "color": "#ffaa00",
+          "points": [
+            { "x": 0, "y": 0, "z": 0 },
+            { "x": 5, "y": 0, "z": 5 },
+            { "x": 10, "y": 0, "z": 10 }
+          ]
+        }
+      ],
+      "measurements": [
+        {
+          "length": 5.5,
+          "height": 0,
+          "start": { "x": 2, "y": 0, "z": 2 },
+          "end": { "x": 7, "y": 0, "z": 7 }
+        }
+      ]
+    },
+    {
+      "id": "scene-002",
+      "name": "الصالة",
+      "image": "scenes/scene-002.jpg",
+      "hotspots": [
+        {
+          "id": "hotspot-003",
+          "type": "SCENE",
+          "position": { "x": -10, "y": 0, "z": -5 },
+          "data": { "targetSceneId": "scene-001", "targetSceneName": "المدخل الرئيسي" }
+        }
+      ]
+    }
+  ]
+}

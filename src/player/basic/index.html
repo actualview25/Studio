@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>جولة افتراضية - Actual View Studio</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; direction: rtl; }
+        #container { width: 100vw; height: 100vh; background: #000; }
+        
+        .player-toolbar {
+            position: fixed; top: 0; left: 0; right: 0; height: 60px;
+            background: rgba(20, 30, 40, 0.4); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(74, 108, 143, 0.3);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; z-index: 1000; color: white;
+        }
+        
+        .player-logo { font-size: 20px; font-weight: bold; color: #fff; }
+        .player-controls { display: flex; gap: 10px; }
+        .player-controls button {
+            padding: 8px 16px; background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(74,108,143,0.4); border-radius: 30px;
+            color: white; cursor: pointer; transition: all 0.2s;
+        }
+        .player-controls button:hover { background: rgba(74,108,143,0.6); }
+        
+        .player-scene-panel {
+            position: fixed; top: 50%; left: 20px; transform: translateY(-50%);
+            width: 260px; max-height: 70vh; background: rgba(20,30,40,0.25);
+            backdrop-filter: blur(12px); border: 1px solid rgba(74,108,143,0.3);
+            border-radius: 12px; color: white; z-index: 900;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        
+        .player-panel-header {
+            padding: 12px; border-bottom: 1px solid rgba(74,108,143,0.2);
+            background: rgba(0,0,0,0.2);
+        }
+        .player-panel-header h3 { margin: 0; color: white; font-size: 14px; }
+        
+        .player-scene-list {
+            max-height: calc(70vh - 60px); overflow-y: auto; padding: 8px;
+        }
+        .player-scene-list::-webkit-scrollbar { width: 4px; }
+        .player-scene-list::-webkit-scrollbar-thumb { background: rgba(74,108,143,0.5); border-radius: 4px; }
+        
+        .player-scene-item {
+            padding: 10px 12px; margin: 4px 0; background: rgba(255,255,255,0.03);
+            border-radius: 6px; cursor: pointer; display: flex; align-items: center;
+            gap: 8px; transition: all 0.2s;
+        }
+        .player-scene-item:hover { background: rgba(74,108,143,0.2); }
+        .player-scene-item.active { background: rgba(74,108,143,0.3); border-right: 3px solid #88aaff; }
+        .player-scene-icon { font-size: 16px; }
+        .player-scene-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .player-scene-count { font-size: 11px; background: rgba(74,108,143,0.4); padding: 2px 6px; border-radius: 10px; }
+        
+        .player-paths-panel {
+            position: fixed; top: 80px; right: 20px;
+            background: rgba(20,30,40,0.25); backdrop-filter: blur(12px);
+            border: 1px solid rgba(74,108,143,0.3); border-radius: 12px;
+            color: white; z-index: 900; padding: 15px; min-width: 200px;
+        }
+        .player-paths-panel h3 { margin: 0 0 10px 0; color: white; font-size: 14px; text-align: center; }
+        
+        .player-path-item {
+            display: flex; align-items: center; gap: 8px; padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .player-path-item:last-child { border-bottom: none; }
+        .player-path-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+        .player-path-color { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+        .player-path-item label { flex: 1; cursor: pointer; font-size: 13px; }
+        
+        .player-hotspot {
+            position: absolute; transform: translate(-50%, -50%);
+            cursor: pointer; z-index: 1000; pointer-events: auto;
+        }
+        .player-hotspot img { width: 40px; height: 40px; border-radius: 50%; transition: transform 0.2s; }
+        .player-hotspot:hover img { transform: scale(1.15); }
+        
+        .player-hotspot-label {
+            position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 4px 8px;
+            border-radius: 12px; font-size: 12px; white-space: nowrap;
+            border: 2px solid; opacity: 0; transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .player-hotspot:hover .player-hotspot-label { opacity: 1; }
+        
+        .player-measurement-line {
+            position: absolute; pointer-events: none; z-index: 500;
+            border-top: 4px solid #ffaa44; box-shadow: 0 0 20px #ffaa44;
+            border-radius: 4px; transform-origin: 0 0; height: 4px;
+        }
+        .player-measurement-point {
+            position: absolute; width: 12px; height: 12px;
+            background: #ffaa44; border-radius: 50%;
+            box-shadow: 0 0 20px #ffaa44; transform: translate(-50%, -50%);
+            z-index: 501;
+        }
+        .player-measurement-label {
+            position: absolute; background: rgba(0,0,0,0.8);
+            color: white; padding: 8px 16px; border-radius: 30px;
+            font-size: 20px; font-weight: bold; border: 2px solid #ffaa44;
+            box-shadow: 0 0 30px #ffaa44; transform: translate(-50%, -50%);
+            white-space: nowrap; z-index: 503; backdrop-filter: blur(5px);
+        }
+        
+        @media (max-width: 768px) {
+            .player-scene-panel { width: 200px; }
+            .player-paths-panel { display: none; }
+            .player-paths-panel.show { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+    
+    <script type="module">
+        import { Player } from './Player.js';
+        
+        // تحميل manifest.json
+        fetch('manifest.json')
+            .then(r => r.json())
+            .then(data => {
+                window.player = new Player('container', data);
+            })
+            .catch(err => {
+                console.error('❌ فشل تحميل الجولة:', err);
+                document.body.innerHTML += '<div style="color:red; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:black; padding:20px;">خطأ في تحميل الجولة</div>';
+            });
+    </script>
+</body>
+</html>
