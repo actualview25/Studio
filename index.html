@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <title>Actual View Studio - باني الجولات</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- تحديد المسار الأساسي لـ GitHub Pages -->
+    <base href="/Studio/">
+    
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
-    
-    <!-- أيقونات Hotspots -->
-    <link rel="icon" type="image/png" href="assets/icons/hotspot.png">  <!-- ✅ تم التصحيح -->
     
     <!-- ========== المكتبات ========== -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -18,7 +19,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/fonts/helvetiker_regular.typeface.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
-
 </head>
 <body>
     <!-- شريط الأدوات العلوي -->
@@ -69,10 +69,10 @@
     <!-- شريط Hotspots -->
     <div class="hotspot-toolbar">
         <button class="hotspot-btn scene" id="hotspotScene" title="نقطة انتقال">
-            <img src="assets/icons/hotspot.png" alt="scene" style="width: 28px; height: 28px; filter: brightness(0) invert(1);">  <!-- ✅ تم التصحيح -->
+            <img src="assets/icons/hotspot.png" alt="scene" style="width: 28px; height: 28px; filter: brightness(0) invert(1);">
         </button>
         <button class="hotspot-btn info" id="hotspotInfo" title="معلومات">
-            <img src="assets/icons/info.png" alt="info" style="width: 28px; height: 28px; filter: brightness(0) invert(1);">  <!-- ✅ تم التصحيح -->
+            <img src="assets/icons/info.png" alt="info" style="width: 28px; height: 28px; filter: brightness(0) invert(1);">
         </button>
     </div>
 
@@ -109,8 +109,8 @@
 
     <!-- تحميل مسارات الأيقونات كمتغيرات CSS -->
     <script>
-        document.documentElement.style.setProperty('--hotspot-icon', 'url("assets/icons/hotspot.png")');  <!-- ✅ تم التصحيح -->
-        document.documentElement.style.setProperty('--info-icon', 'url("assets/icons/info.png")');  <!-- ✅ تم التصحيح -->
+        document.documentElement.style.setProperty('--hotspot-icon', 'url("assets/icons/hotspot.png")');
+        document.documentElement.style.setProperty('--info-icon', 'url("assets/icons/info.png")');
     </script>
 
     <script type="module" src="main.js"></script>
