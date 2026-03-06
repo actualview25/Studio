@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
@@ -8,28 +8,16 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
     
     <!-- أيقونات Hotspots -->
-    <link rel="icon" type="image/png" href="icon/hotspot.png">
+    <link rel="icon" type="image/png" href="assets/icons/hotspot.png">  <!-- ✅ تم التصحيح -->
     
- <!-- ========== المكتبات - النسخة الكلاسيكية ========== -->
-<!-- Three.js (المكتبة الرئيسية) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-<!-- OrbitControls (التحكم بالكاميرا) -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
-<!-- JSZip (لإنشاء ملفات ZIP) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
-<!-- FileSaver (لحفظ الملفات) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-<!-- 👇 أضف هذا السطر الجديد 👇 -->
-<!-- SortableJS (للسحب والترتيب) -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-<!-- ================================================= -->
-<!-- أضف هذا مع المكتبات الأخرى -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/fonts/helvetiker_regular.typeface.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
+    <!-- ========== المكتبات ========== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/fonts/helvetiker_regular.typeface.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
 
 </head>
 <body>
@@ -70,22 +58,21 @@
     <div id="container"></div>
 
     <!-- أدوات الرسم -->
-<!-- أدوات الرسم -->
-<div class="drawing-tools">
-    <button id="toggleRotate">⏸️ إيقاف التدوير</button>
-    <button id="toggleDraw">✏️ تفعيل الرسم</button>
-    <button id="toggleMeasure" class="measure-btn">📏 تفعيل القياس</button> <!-- جديد -->
-    <button id="finalizePath">💾 تثبيت المسار</button>
-    <button id="clearAll">🗑️ مسح الكل</button>
-</div>
+    <div class="drawing-tools">
+        <button id="toggleRotate">⏸️ إيقاف التدوير</button>
+        <button id="toggleDraw">✏️ تفعيل الرسم</button>
+        <button id="toggleMeasure" class="measure-btn">📏 تفعيل القياس</button>
+        <button id="finalizePath">💾 تثبيت المسار</button>
+        <button id="clearAll">🗑️ مسح الكل</button>
+    </div>
 
     <!-- شريط Hotspots -->
     <div class="hotspot-toolbar">
         <button class="hotspot-btn scene" id="hotspotScene" title="نقطة انتقال">
-            <img src="assets/icon/hotspot.png" alt="scene" style="width: 28px; height: 28px; filter: brightness(0) invert(1);">
+            <img src="assets/icons/hotspot.png" alt="scene" style="width: 28px; height: 28px; filter: brightness(0) invert(1);">  <!-- ✅ تم التصحيح -->
         </button>
         <button class="hotspot-btn info" id="hotspotInfo" title="معلومات">
-            <img src="assets/icon/info.png" alt="info" style="width: 28px; height: 28px; filter: brightness(0) invert(1);">
+            <img src="assets/icons/info.png" alt="info" style="width: 28px; height: 28px; filter: brightness(0) invert(1);">  <!-- ✅ تم التصحيح -->
         </button>
     </div>
 
@@ -108,22 +95,22 @@
         <div class="project-list" id="projectList"></div>
     </div>
 
-    <<!-- لوحة المشاهد -->
-<div class="scene-panel" id="scenePanel">
-    <div class="panel-header">
-        <h3>📋 المشاهد</h3>
-        <button class="add-scene-btn" id="addSceneBtn">➕ إضافة مشهد</button>
+    <!-- لوحة المشاهد -->
+    <div class="scene-panel" id="scenePanel">
+        <div class="panel-header">
+            <h3>📋 المشاهد</h3>
+            <button class="add-scene-btn" id="addSceneBtn">➕ إضافة مشهد</button>
+        </div>
+        <div class="scene-list" id="sceneList"></div>
     </div>
-    <div class="scene-list" id="sceneList"></div>
-    <!-- ❗ ملاحظة: زر الإضافة نقلناه للهيدر -->
-</div>
+    
     <!-- شاشة التحميل -->
     <div id="loader" style="display: none;">⏳ جاري التحميل...</div>
 
     <!-- تحميل مسارات الأيقونات كمتغيرات CSS -->
     <script>
-        document.documentElement.style.setProperty('--hotspot-icon', 'url("icon/hotspot.png")');
-        document.documentElement.style.setProperty('--info-icon', 'url("icon/info.png")');
+        document.documentElement.style.setProperty('--hotspot-icon', 'url("assets/icons/hotspot.png")');  <!-- ✅ تم التصحيح -->
+        document.documentElement.style.setProperty('--info-icon', 'url("assets/icons/info.png")');  <!-- ✅ تم التصحيح -->
     </script>
 
     <script type="module" src="main.js"></script>
@@ -141,4 +128,4 @@
         }
     </script>
 </body>
-</html>     
+</html>
