@@ -108,24 +108,36 @@ class ActualViewStudio {
             }
         );
     }
-
-    loadSceneImage(imageData) {
-        if (!this.sphereMesh || !this.sphereMesh.material) return;
-
-        const img = new Image();
-        img.onload = () => {
-            const texture = new THREE.CanvasTexture(img);
-            texture.colorSpace = THREE.SRGBColorSpace;
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.repeat.x = -1;
-            
-            this.sphereMesh.material.map = texture;
-            this.sphereMesh.material.needsUpdate = true;
-            
-            console.log('✅ تم تحميل صورة المشهد الجديد');
-        };
-        img.src = imageData;
+loadSceneImage(imageData) {
+    if (!this.sphereMesh || !this.sphereMesh.material) {
+        console.warn('⚠️ sphereMesh غير جاهز، سيتم إنشاؤه');
+        // إنشاء كرة جديدة إذا لم تكن موجودة
+        const geometry = new THREE.SphereGeometry(500, 64, 64);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: 0x333344, 
+            side: THREE.BackSide 
+        });
+        this.sphereMesh = new THREE.Mesh(geometry, material);
+        this.scene.add(this.sphereMesh);
     }
+
+    const img = new Image();
+    img.onload = () => {
+        const texture = new THREE.CanvasTexture(img);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.repeat.x = -1;
+        
+        this.sphereMesh.material.map = texture;
+        this.sphereMesh.material.needsUpdate = true;
+        
+        console.log('✅ تم تحميل صورة المشهد الجديد');
+    };
+    img.onerror = (err) => {
+        console.error('❌ فشل تحميل الصورة:', err);
+    };
+    img.src = imageData;
+}
 
     setupEvents() {
         this.renderer.domElement.addEventListener('click', (e) => this.onClick(e));
