@@ -6,12 +6,25 @@ export class MeasurementTools {
     constructor(app) {
         this.app = app;
         this.scene = app.scene;
+        
+        // ثوابت الكرة والإزاحة (نفس قيم PathTools)
+        this.SPHERE_RADIUS = 500;
+        this.MEASURE_OFFSET = 5; // المسافة خارج الكرة
+        this.MEASURE_RADIUS = this.SPHERE_RADIUS + this.MEASURE_OFFSET; // 505
+        
         this.measureMode = false;
         this.measureStartPoint = null;
         this.measureTempLine = null;
         this.measureGroups = [];
     }
 
+    // ===== تصحيح موقع النقطة إلى خارج الكرة =====
+    correctPosition(position) {
+        const direction = position.clone().normalize();
+        return direction.multiplyScalar(this.MEASURE_RADIUS);
+    }
+
+    // ===== تفعيل/إلغاء وضع القياس =====
     setMode(active) {
         this.measureMode = active;
         document.body.style.cursor = active ? 'crosshair' : 'default';
@@ -36,12 +49,16 @@ export class MeasurementTools {
         console.log(active ? '📏 تفعيل القياس' : '📏 إيقاف القياس');
     }
 
+    // ===== معالجة النقر للقياس =====
     handleClick(point) {
         if (!this.measureMode) return false;
 
+        // تصحيح المسافة (إزاحة خارج الكرة)
+        const correctedPoint = this.correctPosition(point);
+
         if (!this.measureStartPoint) {
             // النقطة الأولى
-            this.measureStartPoint = point.clone();
+            this.measureStartPoint = correctedPoint.clone();
             
             const markerGeo = new THREE.SphereGeometry(5, 16, 16);
             const markerMat = new THREE.MeshStandardMaterial({ 
@@ -59,7 +76,7 @@ export class MeasurementTools {
         }
 
         // النقطة الثانية
-        const endPoint = point.clone();
+        const endPoint = correctedPoint.clone();
         
         if (this.measureTempLine) {
             this.scene.remove(this.measureTempLine);
@@ -80,7 +97,7 @@ export class MeasurementTools {
             return true;
         }
         
-        // إنشاء مجموعة القياس
+        // إنشاء مجموعة القياس (مع الإزاحة)
         const lineGroup = this.createMeasureLine(this.measureStartPoint, endPoint);
         this.scene.add(lineGroup);
         this.measureGroups.push(lineGroup);
@@ -92,8 +109,16 @@ export class MeasurementTools {
         
         // حفظ القياس
         const measurement = {
-            start: { x: this.measureStartPoint.x, y: this.measureStartPoint.y, z: this.measureStartPoint.z },
-            end: { x: endPoint.x, y: endPoint.y, z: endPoint.z },
+            start: { 
+                x: this.measureStartPoint.x, 
+                y: this.measureStartPoint.y, 
+                z: this.measureStartPoint.z 
+            },
+            end: { 
+                x: endPoint.x, 
+                y: endPoint.y, 
+                z: endPoint.z 
+            },
             length: parseFloat(realLength),
             height: parseFloat(realHeight)
         };
@@ -111,11 +136,14 @@ export class MeasurementTools {
         return true;
     }
 
+    // ===== إنشاء خط القياس (مسطرة) =====
     createMeasureLine(point1, point2) {
         const group = new THREE.Group();
         
-        const start = point1.clone();
-        const end = point2.clone();
+        // تصحيح المسافات (تأكيد)
+        const start = this.correctPosition(point1);
+        const end = this.correctPosition(point2);
+        
         const direction = new THREE.Vector3().subVectors(end, start);
         const distance = direction.length();
         const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
@@ -135,7 +163,7 @@ export class MeasurementTools {
         line.position.copy(midPoint);
         group.add(line);
         
-        // أطراف المسطرة
+        // أطراف المسطرة (كرات)
         const sphereGeo = new THREE.SphereGeometry(6, 24, 24);
         const sphereMat = new THREE.MeshStandardMaterial({
             color: 0xffaa44,
@@ -151,7 +179,7 @@ export class MeasurementTools {
         sphere2.position.copy(end);
         group.add(sphere2);
         
-        // علامات المسطرة
+        // علامات المسطرة (تدرجات)
         const numMarks = Math.floor(distance / 2.5);
         for (let i = 1; i < numMarks; i++) {
             const t = i / numMarks;
@@ -175,8 +203,12 @@ export class MeasurementTools {
         return group;
     }
 
+    // ===== إنشاء ملصق القياس =====
     createMeasureLabel(text, position) {
         const group = new THREE.Group();
+        
+        // تصحيح موقع الملصق (أعلى بقليل)
+        const basePos = this.correctPosition(position);
         
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -215,12 +247,13 @@ export class MeasurementTools {
         const sprite = new THREE.Sprite(material);
         sprite.scale.set(120, 60, 1);
         
-        const labelPos = position.clone().add(new THREE.Vector3(0, 80, 0));
+        // رفع الملصق أعلى من الخط
+        const labelPos = basePos.clone().add(new THREE.Vector3(0, 80, 0));
         sprite.position.copy(labelPos);
         group.add(sprite);
         
         // خط رابط
-        const lineGeo = new THREE.BufferGeometry().setFromPoints([position, labelPos]);
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([basePos, labelPos]);
         const lineMat = new THREE.LineBasicMaterial({ color: 0xffaa44 });
         const line = new THREE.Line(lineGeo, lineMat);
         group.add(line);
@@ -228,6 +261,7 @@ export class MeasurementTools {
         return group;
     }
 
+    // ===== إظهار القياسات المحفوظة لمشهد معين =====
     showMeasurements(sceneId) {
         // إزالة القياسات القديمة
         this.measureGroups.forEach(g => this.scene.remove(g));
@@ -252,11 +286,13 @@ export class MeasurementTools {
         console.log(`📏 تم إظهار ${measurements.length} قياس`);
     }
 
+    // ===== إخفاء جميع القياسات =====
     hideAll() {
         this.measureGroups.forEach(g => this.scene.remove(g));
         this.measureGroups = [];
     }
 
+    // ===== تفريغ الموارد =====
     dispose() {
         this.hideAll();
         if (this.measureTempLine) {
