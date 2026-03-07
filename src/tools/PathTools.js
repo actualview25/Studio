@@ -6,6 +6,13 @@ export class PathTools {
     constructor(app) {
         this.app = app;
         this.scene = app.scene;
+        
+        // ثوابت الكرة والإزاحة
+        this.SPHERE_RADIUS = 500;
+        this.PATH_OFFSET = 5; // المسافة خارج الكرة
+        this.PATH_RADIUS = this.SPHERE_RADIUS + this.PATH_OFFSET; // 505
+        
+        // ألوان المسارات
         this.pathColors = {
             EL: 0xffaa00,
             AC: 0x0033cc,
@@ -13,6 +20,7 @@ export class PathTools {
             WA: 0xff0000,
             GS: 0x006633
         };
+        
         this.currentPathType = 'EL';
         this.selectedPoints = [];
         this.paths = [];
@@ -22,11 +30,13 @@ export class PathTools {
         this.drawMode = false;
     }
 
+    // ===== التهيئة =====
     init() {
         this.setupMarkerPreview();
         console.log('🛤️ PathTools جاهز');
     }
 
+    // ===== معاينة النقطة (الكرة) =====
     setupMarkerPreview() {
         const geometry = new THREE.SphereGeometry(8, 16, 16);
         const material = new THREE.MeshStandardMaterial({
@@ -39,6 +49,13 @@ export class PathTools {
         this.markerPreview.visible = false;
     }
 
+    // ===== تصحيح موقع النقطة إلى خارج الكرة =====
+    correctPosition(position) {
+        const direction = position.clone().normalize();
+        return direction.multiplyScalar(this.PATH_RADIUS);
+    }
+
+    // ===== تغيير نوع المسار =====
     setType(type) {
         this.currentPathType = type;
         if (this.markerPreview) {
@@ -49,27 +66,34 @@ export class PathTools {
         console.log(`🎨 تم تغيير نوع المسار إلى: ${type}`);
     }
 
+    // ===== بدء الرسم =====
     startDraw() {
         this.drawMode = true;
         document.body.style.cursor = 'crosshair';
         if (this.markerPreview) this.markerPreview.visible = true;
     }
 
+    // ===== إيقاف الرسم =====
     stopDraw() {
         this.drawMode = false;
         document.body.style.cursor = 'default';
         if (this.markerPreview) this.markerPreview.visible = false;
     }
 
+    // ===== إضافة نقطة =====
     addPoint(position) {
         if (!this.drawMode) return;
         
-        this.selectedPoints.push(position.clone());
+        // تصحيح المسافة (إزاحة خارج الكرة)
+        const correctedPosition = this.correctPosition(position);
+        
+        this.selectedPoints.push(correctedPosition.clone());
         console.log(`📍 نقطة ${this.selectedPoints.length} مضافة - النوع: ${this.currentPathType}`);
-        this.addPointMarker(position);
+        this.addPointMarker(correctedPosition);
         this.updateTempLine();
     }
 
+    // ===== إضافة علامة نقطة =====
     addPointMarker(position) {
         const geometry = new THREE.SphereGeometry(6, 16, 16);
         const material = new THREE.MeshStandardMaterial({
@@ -78,11 +102,15 @@ export class PathTools {
             emissiveIntensity: 0.6
         });
         const marker = new THREE.Mesh(geometry, material);
-        marker.position.copy(position);
+        
+        // التأكد من المسافة الصحيحة
+        marker.position.copy(this.correctPosition(position));
+        
         this.scene.add(marker);
         this.pointMarkers.push(marker);
     }
 
+    // ===== تحديث الخط المؤقت =====
     updateTempLine() {
         if (this.tempLine) {
             this.scene.remove(this.tempLine);
@@ -97,6 +125,7 @@ export class PathTools {
         }
     }
 
+    // ===== حفظ المسار الحالي =====
     saveCurrentPath() {
         if (this.selectedPoints.length < 2) {
             alert('⚠️ أضف نقطتين على الأقل');
@@ -113,20 +142,27 @@ export class PathTools {
             const pathsData = this.paths.map(p => ({
                 type: p.userData.type,
                 color: '#' + this.pathColors[p.userData.type].toString(16).padStart(6, '0'),
-                points: p.userData.points.map(pt => ({ x: pt.x, y: pt.y, z: pt.z }))
+                points: p.userData.points.map(pt => ({ 
+                    x: pt.x, 
+                    y: pt.y, 
+                    z: pt.z 
+                }))
             }));
             
             window.sceneManager.pathsStorage[sceneId] = pathsData;
             window.sceneManager.currentScene.paths = pathsData;
             window.sceneManager.saveScenes();
             
-            if (window.projectManager) window.projectManager.saveCurrentProject();
+            if (window.projectManager) window.projectManager.saveCurrentProject(this.paths, null);
             
             console.log(`✅ تم حفظ ${pathsData.length} مسار في المشهد: ${window.sceneManager.currentScene.name}`);
             alert(`✅ تم تثبيت ${pathsData.length} مسار بنجاح`);
+        } else {
+            console.warn('⚠️ لا يوجد مشهد نشط لحفظ المسارات');
         }
     }
 
+    // ===== إنشاء مسار مستقيم (مع الإزاحة) =====
     createStraightPath(points, type = null) {
         if (points.length < 2) return;
         
@@ -139,8 +175,13 @@ export class PathTools {
             const start = points[i];
             const end = points[i + 1];
             
-            const direction = new THREE.Vector3().subVectors(end, start);
+            // التأكد من أن جميع النقاط على المسافة الصحيحة
+            const correctedStart = this.correctPosition(start);
+            const correctedEnd = this.correctPosition(end);
+            
+            const direction = new THREE.Vector3().subVectors(correctedEnd, correctedStart);
             const distance = direction.length();
+            
             if (distance < 5) continue;
             
             const cylinderGeo = new THREE.CylinderGeometry(3.5, 3.5, distance, 12);
@@ -154,20 +195,26 @@ export class PathTools {
             }));
             cylinder.applyQuaternion(quaternion);
             
-            const center = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+            const center = new THREE.Vector3().addVectors(correctedStart, correctedEnd).multiplyScalar(0.5);
             cylinder.position.copy(center);
             
-            cylinder.userData = { type: pathType, pathId: pathId, points: [start.clone(), end.clone()] };
+            cylinder.userData = { 
+                type: pathType, 
+                pathId: pathId, 
+                points: [correctedStart.clone(), correctedEnd.clone()] 
+            };
+            
             this.scene.add(cylinder);
             this.paths.push(cylinder);
             createdCount++;
         }
         
         if (createdCount > 0) {
-            console.log(`🛤️ تم إنشاء ${createdCount} قطعة مسار من نوع ${pathType}`);
+            console.log(`🛤️ تم إنشاء ${createdCount} قطعة مسار من نوع ${pathType} على نصف قطر ${this.PATH_RADIUS}`);
         }
     }
 
+    // ===== مسح الرسم الحالي =====
     clearCurrentDrawing() {
         this.selectedPoints = [];
         this.pointMarkers.forEach(m => this.scene.remove(m));
@@ -179,6 +226,7 @@ export class PathTools {
         }
     }
 
+    // ===== مسح جميع المسارات =====
     clearAll() {
         this.paths.forEach(p => {
             this.scene.remove(p);
@@ -196,6 +244,7 @@ export class PathTools {
         console.log('🗑️ تم مسح جميع المسارات');
     }
 
+    // ===== إظهار/إخفاء طبقة =====
     toggleLayer(type, visible) {
         let count = 0;
         this.paths.forEach(p => {
@@ -207,24 +256,30 @@ export class PathTools {
         console.log(`${visible ? '👁️ إظهار' : '👁️ إخفاء'} ${count} مسار من نوع ${type}`);
     }
 
+    // ===== تحديث موقع المعاينة =====
     updatePreview(position) {
         if (this.drawMode && this.markerPreview && position) {
-            this.markerPreview.position.copy(position);
+            const correctedPosition = this.correctPosition(position);
+            this.markerPreview.position.copy(correctedPosition);
         }
     }
 
+    // ===== الحصول على المسارات حسب النوع =====
     getPathsByType(type) {
         return this.paths.filter(p => p.userData.type === type);
     }
 
+    // ===== عدد المسارات =====
     getPathCount() {
         return this.paths.length;
     }
 
+    // ===== أنواع المسارات =====
     getTypes() {
         return Object.keys(this.pathColors);
     }
 
+    // ===== تفريغ الموارد =====
     dispose() {
         this.clearAll();
         if (this.markerPreview) {
