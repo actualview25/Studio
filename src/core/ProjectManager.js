@@ -1,158 +1,199 @@
 // =======================================
-// ACTUAL VIEW STUDIO - HOTSPOT SYSTEM
+// ACTUAL VIEW STUDIO - PROJECT MANAGER
 // =======================================
 
-export const HotspotSystem = {
-    markers: {},
-    backgroundSpheres: {},
-    
-    create: function(position, type, data, id) {
-        const bgSphere = this.createBackgroundSphere(position, type, id);
-        const icon = this.createIcon(position, type, data, id);
-        return { bgSphere, icon };
-    },
-    
-    createBackgroundSphere: function(position, type, id) {
-        const color = type === 'SCENE' ? 0x44aaff : 0xffaa44;
-        const geometry = new THREE.SphereGeometry(12, 32, 32);
-        const material = new THREE.MeshStandardMaterial({
-            color: color,
-            emissive: color,
-            emissiveIntensity: 0.2,
-            transparent: true,
-            opacity: 0.15
-        });
-        
-        const sphere = new THREE.Mesh(geometry, material);
-        sphere.position.copy(position);
-        sphere.userData = { type: 'hotspot-background', hotspotId: id, hotspotType: type };
-        
-        if (window.app?.scene) {
-            window.app.scene.add(sphere);
-        }
-        this.backgroundSpheres[id] = sphere;
-        
-        return sphere;
-    },
-    
-    createIcon: function(position, type, data, id) {
-        const div = document.createElement('div');
-        div.className = 'hotspot-marker';
-        div.setAttribute('data-id', id);
-        div.setAttribute('data-type', type);
-        
-        const iconUrl = type === 'SCENE' ? 'assets/icons/hotspot.png' : 'assets/icons/info.png';
-        const borderColor = type === 'SCENE' ? '#44aaff' : '#ffaa44';
-        const displayText = type === 'SCENE' 
-            ? (data.targetSceneName || 'انتقال') 
-            : (data.title || 'معلومات');
-        
-        div.innerHTML = `
-            <img src="${iconUrl}" alt="${type}" style="border: 2px solid ${borderColor}; border-radius: 50%; background: rgba(0,0,0,0.3); width: 40px; height: 40px; pointer-events: none;">
-            <div class="hotspot-label" style="border-color: ${borderColor};">${displayText}</div>
-        `;
-        
-        div._worldPosition = position.clone();
-        
-        div.addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            
-            if (type === 'INFO') {
-                this.showInfoWindow(data.title, data.content);
-            } else {
-                if (window.sceneManager && data.targetSceneId) {
-                    window.sceneManager.switchToScene(data.targetSceneId);
-                }
-            }
-        });
+export class ProjectManager {
+    constructor() {
+        this.projects = [];
+        this.currentProject = null;
+        this.loadProjects();
+    }
 
-        document.body.appendChild(div);
-        this.markers[id] = div;
-        
-        return div;
-    },
-    
-    rebuild: function(hotspots) {
-        this.clear();
-        
-        if (!hotspots || hotspots.length === 0) return;
-        
-        hotspots.forEach(h => {
-            const pos = new THREE.Vector3(h.position.x, h.position.y, h.position.z);
-            this.create(pos, h.type, h.data, h.id);
-        });
-        
-        this.updatePositions();
-        console.log(`✅ تم إنشاء ${hotspots.length} نقطة`);
-    },
-    
-    updatePositions: function() {
-        if (!window.app?.camera) return;
-        
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        
-        Object.values(this.markers).forEach(icon => {
-            if (!icon._worldPosition) return;
-            
-            const pos = icon._worldPosition.clone().project(window.app.camera);
-            
-            if (pos.z > 1) {
-                icon.style.display = 'none';
-                return;
+    loadProjects() {
+        const saved = localStorage.getItem('virtual-tour-projects');
+        if (saved) {
+            try {
+                this.projects = JSON.parse(saved);
+                console.log(`✅ تم تحميل ${this.projects.length} مشروع`);
+            } catch (e) {
+                console.warn('⚠️ فشل تحميل المشاريع المحفوظة');
+                this.projects = [];
             }
-            
-            const x = (pos.x * 0.5 + 0.5) * width;
-            const y = (-pos.y * 0.5 + 0.5) * height;
-            
-            icon.style.left = x + 'px';
-            icon.style.top = y + 'px';
-            
-            icon.style.display = (x < -100 || x > width + 100 || y < -100 || y > height + 100) ? 'none' : 'block';
-        });
-    },
-    
-    showInfoWindow: function(title, content) {
-        document.querySelectorAll('.custom-info-window').forEach(el => el.remove());
-        
-        const win = document.createElement('div');
-        win.className = 'custom-info-window';
-        win.innerHTML = `
-            <div class="window-header">
-                <img src="assets/icons/info.png">
-                <h3>${title || 'معلومات'}</h3>
-            </div>
-            <div class="window-content">${content || ''}</div>
-            <button class="window-close">حسناً</button>
-        `;
-        
-        win.querySelector('.window-close').onclick = () => win.remove();
-        document.body.appendChild(win);
-        
-        setTimeout(() => win.remove(), 5000);
-    },
-    
-    clear: function() {
-        Object.values(this.markers).forEach(icon => {
-            if (icon && icon.parentNode) icon.parentNode.removeChild(icon);
-        });
-        this.markers = {};
-        
-        Object.values(this.backgroundSpheres).forEach(sphere => {
-            if (sphere && window.app?.scene) window.app.scene.remove(sphere);
-        });
-        this.backgroundSpheres = {};
-    },
-    
-    remove: function(id) {
-        if (this.markers[id]?.parentNode) {
-            this.markers[id].parentNode.removeChild(this.markers[id]);
-            delete this.markers[id];
-        }
-        if (this.backgroundSpheres[id] && window.app?.scene) {
-            window.app.scene.remove(this.backgroundSpheres[id]);
-            delete this.backgroundSpheres[id];
         }
     }
-};
+
+    saveProjects() {
+        localStorage.setItem('virtual-tour-projects', JSON.stringify(this.projects));
+        console.log('✅ تم حفظ المشاريع');
+    }
+
+    newProject(name) {
+        const project = {
+            id: Date.now(),
+            name: name || `مشروع-${new Date().toLocaleDateString()}`,
+            created: new Date().toISOString(),
+            modified: new Date().toISOString(),
+            paths: [],
+            imageData: null
+        };
+
+        this.projects.push(project);
+        this.currentProject = project;
+        this.saveProjects();
+        
+        console.log(`📁 تم إنشاء مشروع جديد: ${project.name}`);
+        return project;
+    }
+
+    saveCurrentProject(paths, imageData) {
+        if (this.currentProject) {
+            this.currentProject.paths = paths.map(path => ({
+                type: path.userData.type,
+                color: '#' + pathColors[path.userData.type].toString(16).padStart(6, '0'),
+                points: path.userData.points.map(p => ({ x: p.x, y: p.y, z: p.z }))
+            }));
+            this.currentProject.imageData = imageData;
+            this.currentProject.modified = new Date().toISOString();
+            this.saveProjects();
+            
+            console.log(`💾 تم حفظ المشروع: ${this.currentProject.name}`);
+        }
+    }
+
+    openProject(projectId) {
+        const project = this.projects.find(p => p.id === projectId);
+        if (!project) {
+            console.error('❌ المشروع غير موجود');
+            return null;
+        }
+
+        this.currentProject = project;
+        console.log(`📂 تم فتح المشروع: ${project.name}`);
+        
+        // تحديث المشاهد في SceneManager إذا لزم الأمر
+        if (window.sceneManager && project.imageData) {
+            // سيتم تطبيق هذا لاحقاً حسب الحاجة
+        }
+
+        return project;
+    }
+
+    deleteProject(projectId) {
+        const index = this.projects.findIndex(p => p.id === projectId);
+        if (index !== -1) {
+            const project = this.projects[index];
+            this.projects.splice(index, 1);
+            
+            if (this.currentProject?.id === projectId) {
+                this.currentProject = this.projects[0] || null;
+            }
+            
+            this.saveProjects();
+            console.log(`🗑️ تم حذف المشروع: ${project.name}`);
+            return true;
+        }
+        return false;
+    }
+
+    getProjectsList() {
+        return this.projects.map(p => ({
+            id: p.id,
+            name: p.name,
+            created: p.created,
+            modified: p.modified,
+            pathsCount: p.paths?.length || 0
+        }));
+    }
+
+    getRecentProjects(limit = 5) {
+        return [...this.projects]
+            .sort((a, b) => new Date(b.modified || b.created) - new Date(a.modified || a.created))
+            .slice(0, limit)
+            .map(p => ({
+                id: p.id,
+                name: p.name,
+                modified: p.modified || p.created
+            }));
+    }
+
+    renameProject(newName) {
+        if (!this.currentProject) return false;
+        
+        this.currentProject.name = newName;
+        this.currentProject.modified = new Date().toISOString();
+        this.saveProjects();
+        
+        console.log(`✏️ تم تغيير اسم المشروع إلى: ${newName}`);
+        return true;
+    }
+
+    exportProject() {
+        if (!this.currentProject) {
+            alert('❌ لا يوجد مشروع مفتوح');
+            return;
+        }
+
+        // تجهيز بيانات المشروع للتصدير
+        const exportData = {
+            project: {
+                id: this.currentProject.id,
+                name: this.currentProject.name,
+                created: this.currentProject.created,
+                modified: new Date().toISOString()
+            },
+            paths: this.currentProject.paths || [],
+            imageData: this.currentProject.imageData
+        };
+
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.currentProject.name}.avproj`;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+        console.log(`📦 تم تصدير المشروع: ${this.currentProject.name}`);
+    }
+
+    importProject(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (!data.project || !data.project.name) {
+                        throw new Error('ملف مشروع غير صالح');
+                    }
+
+                    const project = {
+                        id: Date.now(),
+                        name: data.project.name,
+                        created: new Date().toISOString(),
+                        modified: new Date().toISOString(),
+                        paths: data.paths || [],
+                        imageData: data.imageData,
+                        importedFrom: data.project.id
+                    };
+
+                    this.projects.push(project);
+                    this.currentProject = project;
+                    this.saveProjects();
+                    
+                    console.log(`📥 تم استيراد المشروع: ${project.name}`);
+                    resolve(project);
+                    
+                } catch (error) {
+                    console.error('❌ فشل استيراد المشروع:', error);
+                    reject(error);
+                }
+            };
+
+            reader.readAsText(file);
+        });
+    }
+}
