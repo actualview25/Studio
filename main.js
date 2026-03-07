@@ -88,7 +88,7 @@ class ActualViewStudio {
     loadDefaultPanorama() {
         const loader = new THREE.TextureLoader();
         loader.load(
-            'assets/textures/StartPoint.jpg',
+            'assets/texture/StartPoint.jpg',
             (texture) => {
                 texture.colorSpace = THREE.SRGBColorSpace;
                 texture.wrapS = THREE.RepeatWrapping;
