@@ -114,41 +114,65 @@ export class SceneManager {
     }
 
     switchToScene(sceneId) {
-        const sceneData = this.scenes.find(s => s.id === sceneId);
-        if (!sceneData) return false;
+    const sceneData = this.scenes.find(s => s.id === sceneId);
+    if (!sceneData) return false;
 
-        if (this.currentScene && window.pathTools?.paths?.length > 0) {
-            this.pathsStorage[this.currentScene.id] = window.pathTools.paths.map(p => ({
-                type: p.userData.type,
-                color: '#' + window.pathTools.pathColors[p.userData.type].toString(16).padStart(6, '0'),
-                points: p.userData.points.map(pt => ({ x: pt.x, y: pt.y, z: pt.z }))
-            }));
-            this.saveScenes();
-        }
+    console.log('🔄 التبديل إلى المشهد:', sceneData.name);
 
-        this.currentScene = sceneData;
-
-        if (window.pathTools) window.pathTools.clearAll();
-        if (window.hotspotSystem) window.hotspotSystem.clear();
-
-        if (sceneData.paths?.length > 0 && window.pathTools) {
-            sceneData.paths.forEach(pathData => {
-                const points = pathData.points.map(p => new THREE.Vector3(p.x, p.y, p.z));
-                window.pathTools.createStraightPath(points, pathData.type);
-            });
-        }
-
-        if (sceneData.hotspots?.length > 0 && window.hotspotSystem) {
-            window.hotspotSystem.rebuild(sceneData.hotspots);
-        }
-
-        if (sceneData.measurements?.length > 0 && window.measurementTools) {
-            window.measurementTools.showMeasurements(sceneId);
-        }
-
+    // حفظ المسارات الحالية
+    if (this.currentScene && window.pathTools?.paths?.length > 0) {
+        this.pathsStorage[this.currentScene.id] = window.pathTools.paths.map(p => ({
+            type: p.userData.type,
+            color: '#' + window.pathTools.pathColors[p.userData.type].toString(16).padStart(6, '0'),
+            points: p.userData.points.map(pt => ({ x: pt.x, y: pt.y, z: pt.z }))
+        }));
         this.saveScenes();
-        return true;
     }
+
+    this.currentScene = sceneData;
+
+    // تنظيف المشهد الحالي
+    if (window.pathTools) window.pathTools.clearAll();
+    if (window.hotspotSystem) window.hotspotSystem.clear();
+    if (window.measurementTools) window.measurementTools.measureGroups?.forEach(g => window.app?.scene?.remove(g));
+
+    // ✅ الأهم: تحميل صورة المشهد الجديد
+    if (window.app && sceneData.originalImage) {
+        console.log('📸 تحميل صورة المشهد:', sceneData.name);
+        window.app.loadSceneImage(sceneData.originalImage);
+    } else {
+        console.warn('⚠️ لا توجد صورة للمشهد:', sceneData.name);
+        // إذا لم توجد صورة، استخدم البانوراما الافتراضية
+        if (window.app) window.app.loadDefaultPanorama();
+    }
+
+    // إعادة بناء المسارات
+    if (sceneData.paths?.length > 0 && window.pathTools) {
+        sceneData.paths.forEach(pathData => {
+            const points = pathData.points.map(p => new THREE.Vector3(p.x, p.y, p.z));
+            window.pathTools.createStraightPath(points, pathData.type);
+        });
+    }
+
+    // إعادة بناء الهوتسبوتات
+    if (sceneData.hotspots?.length > 0 && window.hotspotSystem) {
+        window.hotspotSystem.rebuild(sceneData.hotspots);
+    }
+
+    // إعادة بناء القياسات
+    if (sceneData.measurements?.length > 0 && window.measurementTools) {
+        window.measurementTools.showMeasurements(sceneId);
+    }
+
+    // ✅ تحديث لوحة المشاهد
+    if (window.uiManager) {
+        window.uiManager.updateSceneList();
+    }
+
+    this.saveScenes();
+    console.log('✅ تم التبديل إلى المشهد:', sceneData.name);
+    return true;
+}
 
     deleteScene(sceneId) {
         const index = this.scenes.findIndex(s => s.id === sceneId);
