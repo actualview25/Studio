@@ -19,9 +19,11 @@ export class ExportTools {
         // إضافة مجلد الأيقونات
         await this.addIcons(folder);
         
-        // إضافة بيانات المشاهد
-        const scenesData = this.prepareScenesData(scenes);
-        folder.file('tour-data.json', JSON.stringify(scenesData, null, 2));
+        // إنشاء manifest.json (فهرس خفيف)
+        await this.createManifest(projectName, scenes, folder);
+        
+        // إنشاء ملفات منفصلة لكل مشهد
+        await this.createSceneFiles(scenes, folder);
         
         // إضافة ملفات المشغل
         folder.file('index.html', this.generatePlayerHTML(projectName));
@@ -33,9 +35,12 @@ export class ExportTools {
         saveAs(content, `${projectName}.zip`);
         
         console.log(`✅ تم تصدير الجولة بنجاح: ${projectName}.zip`);
+        console.log(`📊 المشاهد: ${scenes.length} | تم تقسيم البيانات إلى ملفات منفصلة`);
     }
 
     async addSceneImages(scenes, folder) {
+        const imagesFolder = folder.folder('images');
+        
         for (let i = 0; i < scenes.length; i++) {
             const scene = scenes[i];
             try {
@@ -44,7 +49,7 @@ export class ExportTools {
                 if (typeof imageSrc === 'string' && imageSrc.includes(',') && imageSrc.split(',').length > 1) {
                     const imageData = imageSrc.split(',')[1];
                     if (imageData) {
-                        folder.file(`scene-${i}.jpg`, imageData, { base64: true });
+                        imagesFolder.file(`scene-${i}.jpg`, imageData, { base64: true });
                         console.log(`🖼️ تم إضافة صورة المشهد ${i}`);
                     }
                 }
@@ -59,11 +64,11 @@ export class ExportTools {
         
         try {
             // محاولة تحميل الأيقونات من المجلد المحلي
-            const hotspotResponse = await fetch('assets/icons/hotspot.png');
+            const hotspotResponse = await fetch('assets/icon/hotspot.png');
             const hotspotBlob = await hotspotResponse.blob();
             iconFolder.file('hotspot.png', hotspotBlob);
             
-            const infoResponse = await fetch('assets/icons/info.png');
+            const infoResponse = await fetch('assets/icon/info.png');
             const infoBlob = await infoResponse.blob();
             iconFolder.file('info.png', infoBlob);
             
@@ -85,33 +90,100 @@ export class ExportTools {
         console.log('✅ تم إضافة الأيقونات الافتراضية');
     }
 
-    prepareScenesData(scenes) {
-        return scenes.map((scene, index) => ({
-            id: scene.id,
-            name: scene.name,
-            image: `scene-${index}.jpg`,
-            paths: (scene.paths || []).map(p => ({
-                type: p.type || 'unknown',
-                color: p.color || '#ffaa44',
-                points: (p.points || []).map(pt => ({
-                    x: pt.x || 0,
-                    y: pt.y || 0,
-                    z: pt.z || 0
-                }))
+    async createManifest(projectName, scenes, folder) {
+        const manifest = {
+            project: {
+                name: projectName,
+                date: new Date().toISOString(),
+                version: "2.0",
+                scenesCount: scenes.length
+            },
+            scenes: scenes.map((scene, index) => ({
+                id: scene.id,
+                index: index,
+                name: scene.name,
+                image: `images/scene-${index}.jpg`,
+                data: `scenes/scene-${index}.json`,
+                hotspotsCount: scene.hotspots?.length || 0,
+                pathsCount: scene.paths?.length || 0,
+                measurementsCount: scene.measurements?.length || 0,
+                hasPaths: (scene.paths?.length > 0),
+                hasHotspots: (scene.hotspots?.length > 0),
+                hasMeasurements: (scene.measurements?.length > 0)
             })),
-            hotspots: (scene.hotspots || []).map(h => ({
-                id: h.id,
-                type: h.type,
-                position: h.position,
-                data: h.data || {}
-            })),
-            measurements: (scene.measurements || []).map(m => ({
-                length: m.length,
-                height: m.height,
-                start: m.start,
-                end: m.end
-            }))
-        }));
+            layers: {
+                paths: ['EL', 'AC', 'WP', 'WA', 'GS'],
+                measurements: ['length', 'height'],
+                hotspots: ['SCENE', 'INFO']
+            }
+        };
+        
+        folder.file('manifest.json', JSON.stringify(manifest, null, 2));
+        console.log(`📋 تم إنشاء manifest.json مع ${scenes.length} مشهد`);
+    }
+
+    async createSceneFiles(scenes, folder) {
+        const scenesFolder = folder.folder('scenes');
+        
+        for (let i = 0; i < scenes.length; i++) {
+            const scene = scenes[i];
+            
+            // تجهيز بيانات المشهد
+            const sceneData = {
+                id: scene.id,
+                index: i,
+                name: scene.name,
+                image: `images/scene-${i}.jpg`,
+                paths: (scene.paths || []).map(p => {
+                    if (!p || typeof p !== 'object') return null;
+                    return {
+                        type: p.type || 'unknown',
+                        color: p.color || '#ffaa44',
+                        points: (p.points || []).map(pt => ({
+                            x: pt.x || 0,
+                            y: pt.y || 0,
+                            z: pt.z || 0
+                        }))
+                    };
+                }).filter(p => p !== null),
+                
+                hotspots: (scene.hotspots || []).map(h => {
+                    if (!h || typeof h !== 'object') return null;
+                    return {
+                        id: h.id || `hotspot-${Date.now()}`,
+                        type: h.type || 'INFO',
+                        position: {
+                            x: h.position?.x || 0,
+                            y: h.position?.y || 0,
+                            z: h.position?.z || 0
+                        },
+                        data: h.data || {}
+                    };
+                }).filter(h => h !== null),
+                
+                measurements: (scene.measurements || []).map(m => {
+                    if (!m || typeof m !== 'object') return null;
+                    return {
+                        length: m.length || 0,
+                        height: m.height || 0,
+                        start: {
+                            x: m.start?.x || 0,
+                            y: m.start?.y || 0,
+                            z: m.start?.z || 0
+                        },
+                        end: {
+                            x: m.end?.x || 0,
+                            y: m.end?.y || 0,
+                            z: m.end?.z || 0
+                        }
+                    };
+                }).filter(m => m !== null)
+            };
+            
+            // حفظ ملف المشهد
+            scenesFolder.file(`scene-${i}.json`, JSON.stringify(sceneData, null, 2));
+            console.log(`📁 تم إنشاء ملف المشهد ${i}: ${scene.name}`);
+        }
     }
 
     generatePlayerHTML(projectName) {
@@ -136,7 +208,7 @@ export class ExportTools {
             padding: 0 20px; z-index: 1000; color: white;
         }
         
-        .logo { font-size: 20px; font-weight: bold; color: #fff; }
+        .logo { font-size: 20px; font-weight: bold; }
         .tour-name { font-size: 14px; background: rgba(255,255,255,0.1); padding: 6px 16px; border-radius: 30px; }
         
         #autoRotateBtn {
@@ -169,7 +241,7 @@ export class ExportTools {
         }
         
         .panel-header { padding: 12px; border-bottom: 1px solid rgba(74,108,143,0.2); }
-        .scene-list-container { max-height: calc(70vh - 60px); overflow-y: auto; padding: 8px; }
+        .scene-list { max-height: calc(70vh - 60px); overflow-y: auto; padding: 8px; }
         .scene-item { padding: 10px 12px; margin: 4px 0; background: rgba(255,255,255,0.03); border-radius: 6px; cursor: pointer; }
         .scene-item.active { background: rgba(74,108,143,0.3); border-right: 3px solid #88aaff; }
         
@@ -212,14 +284,106 @@ export class ExportTools {
         <div class="panel-header">
             <h3>📋 قائمة المشاهد</h3>
         </div>
-        <div class="scene-list-container" id="sceneListContainer"></div>
+        <div class="scene-list" id="sceneList"></div>
     </div>
 
     <script>
-        const ICONS = { hotspot: 'icon/hotspot.png', info: 'icon/info.png' };
+        // =======================================
+        // نظام تحميل المشاهد الذكي (Lazy Loading)
+        // =======================================
+        
+        class SceneLoader {
+            constructor() {
+                this.manifest = null;
+                this.scenes = [];
+                this.loadedScenes = new Map();
+                this.currentSceneIndex = 0;
+                this.isLoading = false;
+            }
+            
+            async loadManifest() {
+                try {
+                    const response = await fetch('manifest.json');
+                    this.manifest = await response.json();
+                    this.scenes = this.manifest.scenes;
+                    console.log(\`📋 تم تحميل manifest مع \${this.scenes.length} مشهد\`);
+                    return this.scenes;
+                } catch (error) {
+                    console.error('❌ فشل تحميل manifest:', error);
+                    return [];
+                }
+            }
+            
+            async loadScene(index) {
+                if (this.isLoading) return null;
+                
+                // إذا كان المشهد محملاً مسبقاً
+                if (this.loadedScenes.has(index)) {
+                    console.log(\`✅ مشهد \${index} من الذاكرة المخبأة\`);
+                    return this.loadedScenes.get(index);
+                }
+                
+                this.isLoading = true;
+                
+                try {
+                    const sceneInfo = this.scenes[index];
+                    if (!sceneInfo) {
+                        throw new Error(\`المشهد \${index} غير موجود\`);
+                    }
+                    
+                    console.log(\`📥 تحميل المشهد \${index}: \${sceneInfo.name}\`);
+                    const response = await fetch(sceneInfo.data);
+                    const sceneData = await response.json();
+                    
+                    // تخزين في الذاكرة المخبأة
+                    this.loadedScenes.set(index, sceneData);
+                    
+                    // تفريغ المشاهد البعيدة (أكثر من 3 مشاهد)
+                    this.cleanupCache(index);
+                    
+                    this.isLoading = false;
+                    return sceneData;
+                    
+                } catch (error) {
+                    console.error(\`❌ فشل تحميل المشهد \${index}:\`, error);
+                    this.isLoading = false;
+                    return null;
+                }
+            }
+            
+            cleanupCache(currentIndex) {
+                const maxCache = 3; // نحتفظ بآخر 3 مشاهد فقط
+                const indicesToKeep = [currentIndex - 1, currentIndex, currentIndex + 1]
+                    .filter(i => i >= 0 && i < this.scenes.length);
+                
+                for (let [index] of this.loadedScenes) {
+                    if (!indicesToKeep.includes(index)) {
+                        console.log(\`🧹 تفريغ المشهد \${index} من الذاكرة\`);
+                        this.loadedScenes.delete(index);
+                    }
+                }
+            }
+            
+            preloadNextScene(currentIndex) {
+                // تحميل المشهد التالي في الخلفية
+                if (currentIndex + 1 < this.scenes.length) {
+                    setTimeout(() => {
+                        if (!this.loadedScenes.has(currentIndex + 1)) {
+                            this.loadScene(currentIndex + 1);
+                        }
+                    }, 1000);
+                }
+            }
+        }
+        
+        // ===== المتغيرات العامة =====
+        const ICONS = { 
+            hotspot: 'icon/hotspot.png', 
+            info: 'icon/info.png' 
+        };
+        
         let autoRotate = true;
         let currentSceneIndex = 0;
-        let scenes = [];
         let scene3D, camera, renderer, controls, sphereMesh;
         let allPaths = [];
         let hotspotMarkers = {};
@@ -228,6 +392,8 @@ export class ExportTools {
         
         const pathColors = { EL: '#ffcc00', AC: '#00ccff', WP: '#0066cc', WA: '#ff3300', GS: '#33cc33' };
         
+        // ===== تهيئة نظام التحميل =====
+        const sceneLoader = new SceneLoader();
         // ===== دوال القياس =====
         function createMeasurementElement(m) {
             const line = document.createElement('div'); line.className = 'measurement-line'; line.style.display = 'none';
@@ -285,17 +451,18 @@ export class ExportTools {
         
         // ===== دوال المشاهد =====
         function updateSceneList() {
-            const c = document.getElementById('sceneListContainer');
-            if (!c) return;
-            c.innerHTML = '';
-            scenes.forEach((s, i) => {
+            const list = document.getElementById('sceneList');
+            if (!list || !sceneLoader.scenes) return;
+            
+            list.innerHTML = '';
+            sceneLoader.scenes.forEach((scene, i) => {
                 const item = document.createElement('div');
                 item.className = 'scene-item' + (i === currentSceneIndex ? ' active' : '');
-                item.innerHTML = '<span class="scene-icon">' + (i === 0 ? '🏠' : '🏢') + '</span>' +
-                    '<span class="scene-name">' + s.name + '</span>' +
-                    '<span class="scene-hotspot-count">' + (s.hotspots?.length || 0) + '</span>';
+                item.innerHTML = '<span class="scene-icon">' + (i === 0 ? '🏠' : '🌄') + '</span>' +
+                    '<span class="scene-name">' + scene.name + '</span>' +
+                    '<span class="scene-hotspot-count">' + (scene.hotspotsCount || 0) + '</span>';
                 item.onclick = () => loadScene(i);
-                c.appendChild(item);
+                list.appendChild(item);
             });
         }
         
@@ -316,7 +483,7 @@ export class ExportTools {
             div.onclick = () => {
                 if (type === 'INFO') alert(data.title + '\\n' + (data.content || ''));
                 else if (data.targetSceneId) {
-                    const idx = scenes.findIndex(s => s.id === data.targetSceneId);
+                    const idx = sceneLoader.scenes.findIndex(s => s.id === data.targetSceneId);
                     if (idx !== -1) loadScene(idx);
                 }
             };
@@ -326,24 +493,7 @@ export class ExportTools {
         function rebuildHotspots() {
             document.querySelectorAll('.hotspot-marker').forEach(el => el.remove());
             hotspotMarkers = {};
-            const cs = scenes[currentSceneIndex];
-            if (!cs?.hotspots) return;
-            
-            const w = window.innerWidth, h = window.innerHeight;
-            cs.hotspots.forEach(h => {
-                const pos = new THREE.Vector3(h.position.x, h.position.y, h.position.z);
-                const proj = pos.clone().project(camera);
-                if (proj.z > 1) return;
-                
-                const x = (proj.x * 0.5 + 0.5) * w;
-                const y = (-proj.y * 0.5 + 0.5) * h;
-                if (x < -100 || x > w+100 || y < -100 || y > h+100) return;
-                
-                const el = createHotspotElement(x, y, h.type, h.data);
-                el._worldPosition = pos.clone();
-                document.body.appendChild(el);
-                hotspotMarkers[h.id] = el;
-            });
+            // يتم إعادة البناء بعد تحميل المشهد
         }
 
         function updateHotspotsPosition() {
@@ -360,7 +510,7 @@ export class ExportTools {
             });
         }
         
-   // ===== دوال المسارات =====
+        // ===== دوال المسارات =====
         function togglePathsByType(type, visible) {
             allPaths.forEach(p => { if (p.userData?.type === type) p.visible = visible; });
         }
@@ -378,60 +528,105 @@ export class ExportTools {
             });
         }
         
-        function loadScene(index) {
-            const sd = scenes[index];
-            if (!sd) return;
+        async function loadScene(index) {
+            console.log(\`🔄 تحميل المشهد \${index}\`);
+            
+            // تحميل بيانات المشهد
+            const sceneData = await sceneLoader.loadScene(index);
+            if (!sceneData) return;
+            
             currentSceneIndex = index;
             
+            // تنظيف المشهد الحالي
             if (sphereMesh) scene3D.remove(sphereMesh);
             document.querySelectorAll('.hotspot-marker').forEach(el => el.remove());
             allPaths.forEach(p => scene3D.remove(p));
             allPaths = [];
+            hotspotMarkers = {};
             
-            new THREE.TextureLoader().load(sd.image, tex => {
-                tex.wrapS = THREE.RepeatWrapping; tex.repeat.x = -1;
-                sphereMesh = new THREE.Mesh(new THREE.SphereGeometry(500,128,128),
-                    new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide }));
-                scene3D.add(sphereMesh);
-                
-                if (sd.paths) {
-                    sd.paths.forEach(pd => {
-                        if (!pd.points) return;
-                        const pts = pd.points.map(p => new THREE.Vector3(p.x, p.y, p.z));
-                        for (let i=0; i<pts.length-1; i++) {
-                            const s = pts[i], e = pts[i+1];
-                            const dir = new THREE.Vector3().subVectors(e, s);
-                            const dist = dir.length();
-                            if (dist < 0.5) continue;
-                            
-                            const cyl = new THREE.Mesh(new THREE.CylinderGeometry(3.5,3.5,dist,12),
-                                new THREE.MeshStandardMaterial({ color: pd.color || '#ffaa44', emissive: '#442200' }));
-                            const mid = new THREE.Vector3().addVectors(s, e).multiplyScalar(0.5);
-                            cyl.position.copy(mid);
-                            cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
-                            cyl.userData = { type: pd.type };
-                            cyl.visible = false;
-                            scene3D.add(cyl);
-                            allPaths.push(cyl);
-                        }
-                    });
-                }
-                
-                setTimeout(rebuildHotspots, 200);
-                loadMeasurements(sd);
-                updateSceneList();
+            // تحميل الصورة
+            const texture = await new Promise((resolve, reject) => {
+                new THREE.TextureLoader().load(sceneData.image, resolve, undefined, reject);
             });
+            
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.repeat.x = -1;
+            
+            sphereMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(500,128,128),
+                new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide })
+            );
+            scene3D.add(sphereMesh);
+            
+            // بناء المسارات
+            if (sceneData.paths) {
+                sceneData.paths.forEach(pathData => {
+                    if (!pathData.points) return;
+                    const pts = pathData.points.map(p => new THREE.Vector3(p.x, p.y, p.z));
+                    for (let i=0; i<pts.length-1; i++) {
+                        const s = pts[i], e = pts[i+1];
+                        const dir = new THREE.Vector3().subVectors(e, s);
+                        const dist = dir.length();
+                        if (dist < 0.5) continue;
+                        
+                        const cyl = new THREE.Mesh(
+                            new THREE.CylinderGeometry(3.5,3.5,dist,12),
+                            new THREE.MeshStandardMaterial({ color: pathData.color || '#ffaa44', emissive: '#442200' })
+                        );
+                        const mid = new THREE.Vector3().addVectors(s, e).multiplyScalar(0.5);
+                        cyl.position.copy(mid);
+                        cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+                        cyl.userData = { type: pathData.type };
+                        cyl.visible = false;
+                        scene3D.add(cyl);
+                        allPaths.push(cyl);
+                    }
+                });
+            }
+            
+            // بناء النقاط
+            if (sceneData.hotspots) {
+                const w = window.innerWidth, h = window.innerHeight;
+                sceneData.hotspots.forEach(h => {
+                    const pos = new THREE.Vector3(h.position.x, h.position.y, h.position.z);
+                    const proj = pos.clone().project(camera);
+                    if (proj.z > 1) return;
+                    
+                    const x = (proj.x * 0.5 + 0.5) * w;
+                    const y = (-proj.y * 0.5 + 0.5) * h;
+                    if (x < -100 || x > w+100 || y < -100 || y > h+100) return;
+                    
+                    const el = createHotspotElement(x, y, h.type, h.data);
+                    el._worldPosition = pos.clone();
+                    document.body.appendChild(el);
+                    hotspotMarkers[h.id] = el;
+                });
+            }
+            
+            // بناء القياسات
+            loadMeasurements(sceneData);
+            
+            // تحديث القائمة
+            updateSceneList();
+            
+            // تحميل المشهد التالي في الخلفية
+            sceneLoader.preloadNextScene(index);
+            
+            console.log(\`✅ تم تحميل المشهد \${index}: \${sceneData.name}\`);
         }
         
         // ===== التهيئة =====
-        fetch('tour-data.json').then(r=>r.json()).then(data => {
-            scenes = data;
-            scene3D = new THREE.Scene(); scene3D.background = new THREE.Color(0x000000);
+        async function init() {
+            scene3D = new THREE.Scene();
+            scene3D.background = new THREE.Color(0x000000);
+            
             camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
             camera.position.set(0,0,0.1);
+            
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(innerWidth, innerHeight);
             document.getElementById('container').appendChild(renderer.domElement);
+            
             scene3D.add(new THREE.AmbientLight(0xffffff, 1.5));
             
             controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -446,20 +641,27 @@ export class ExportTools {
             
             document.getElementById('toggleMeasurements').onclick = () => {
                 showMeasurements = !showMeasurements;
-                this.textContent = showMeasurements ? '📏 إخفاء القياسات' : '📏 إظهار القياسات';
+                document.getElementById('toggleMeasurements').textContent = showMeasurements ? '📏 إخفاء القياسات' : '📏 إظهار القياسات';
                 measurementElements.forEach(e => {
                     if(e.line) e.line.style.display = showMeasurements ? 'block' : 'none';
                 });
             };
             
             createPathsTogglePanel();
-            loadScene(0);
+            
+            // تحميل manifest أولاً
+            await sceneLoader.loadManifest();
+            updateSceneList();
+            
+            // تحميل أول مشهد
+            if (sceneLoader.scenes.length > 0) {
+                await loadScene(0);
+            }
             
             window.addEventListener('resize', () => {
                 camera.aspect = innerWidth / innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(innerWidth, innerHeight);
-                rebuildHotspots();
             });
             
             function animate() {
@@ -470,7 +672,10 @@ export class ExportTools {
                 updateMeasurementPositions();
             }
             animate();
-        }).catch(e => console.error('خطأ:', e));
+        }
+        
+        // بدء التشغيل
+        init();
     </script>
 </body>
 </html>`;
@@ -503,6 +708,13 @@ export class ExportTools {
 تحتوي الجولة على قياسات معتمدة
 
 ---
-تم إنشاؤها باستخدام Actual View Studio © 2026`;
+تم إنشاؤها باستخدام Actual View Studio © 2026
+
+## هيكل الملفات:
+- \`manifest.json\` - فهرس المشاهد
+- \`scenes/\` - بيانات كل مشهد على حدة
+- \`images/\` - صور المشاهد
+- \`icon/\` - أيقونات النقاط
+`;
     }
 }
