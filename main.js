@@ -145,33 +145,37 @@ loadSceneImage(imageData) {
         window.addEventListener('keydown', (e) => this.onKeyDown(e));
         window.addEventListener('resize', () => this.onResize());
     }
+onClick(e) {
+    if (!this.sphereMesh || e.target !== this.renderer.domElement) return;
+    
+    const mouse = new THREE.Vector2();
+    mouse.x = (e.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
+    mouse.y = -(e.clientY / this.renderer.domElement.clientHeight) * 2 + 1;
 
-    onClick(e) {
-        if (!this.sphereMesh || e.target !== this.renderer.domElement) return;
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.camera);
+    
+    const hits = raycaster.intersectObject(this.sphereMesh);
+
+    if (hits.length) {
+        const surfacePoint = hits[0].point.clone();
         
-        const mouse = new THREE.Vector2();
-        mouse.x = (e.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
-        mouse.y = -(e.clientY / this.renderer.domElement.clientHeight) * 2 + 1;
-
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, this.camera);
+        // ✅ إزاحة النقطة للخارج قليلاً
+        const direction = surfacePoint.clone().normalize();
+        const offsetPoint = direction.multiplyScalar(502); // 500 + 2
         
-        const hits = raycaster.intersectObject(this.sphereMesh);
+        console.log('📍 نقطة على السطح:', surfacePoint);
+        console.log('📍 نقطة بعد الإزاحة:', offsetPoint);
 
-        if (hits.length) {
-            const point = hits[0].point.clone();
-
-            if (window.measurementTools?.measureMode) {
-                window.measurementTools.handleClick(point);
-            } else if (this.hotspotMode) {
-                this.addHotspot(point);
-                this.hotspotMode = null;
-                document.body.style.cursor = 'default';
-            } else if (window.pathTools?.drawMode) {
-                window.pathTools.addPoint(point);
-            }
+        if (window.measurementTools?.measureMode) {
+            window.measurementTools.handleClick(offsetPoint);
+        } else if (this.hotspotMode) {
+            this.addHotspot(surfacePoint); // النقاط تبقى على السطح
+        } else if (window.pathTools?.drawMode) {
+            window.pathTools.addPoint(offsetPoint);
         }
     }
+}
 
     onMouseMove(e) {
         if (!window.pathTools?.drawMode || !this.sphereMesh) return;
