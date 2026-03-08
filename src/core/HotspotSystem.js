@@ -1,7 +1,7 @@
 // =======================================
 // ACTUAL VIEW STUDIO - HOTSPOT SYSTEM
 // =======================================
-import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
+
 export const HotspotSystem = {
     markers: {},
     backgroundSpheres: {},
