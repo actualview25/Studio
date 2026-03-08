@@ -2,6 +2,9 @@
 // ACTUAL VIEW STUDIO - MAIN ENTRY POINT
 // =======================================
 
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
 import { SceneManager } from './src/core/SceneManager.js';
 import { ProjectManager } from './src/core/ProjectManager.js';
 import { HotspotSystem } from './src/core/HotspotSystem.js';
@@ -42,7 +45,7 @@ class ActualViewStudio {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('container').appendChild(this.renderer.domElement);
 
-        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableZoom = true;
         this.controls.enablePan = false;
         this.controls.enableDamping = true;
@@ -108,36 +111,37 @@ class ActualViewStudio {
             }
         );
     }
-loadSceneImage(imageData) {
-    if (!this.sphereMesh || !this.sphereMesh.material) {
-        console.warn('⚠️ sphereMesh غير جاهز، سيتم إنشاؤه');
-        // إنشاء كرة جديدة إذا لم تكن موجودة
-        const geometry = new THREE.SphereGeometry(500, 64, 64);
-        const material = new THREE.MeshBasicMaterial({ 
-            color: 0x333344, 
-            side: THREE.BackSide 
-        });
-        this.sphereMesh = new THREE.Mesh(geometry, material);
-        this.scene.add(this.sphereMesh);
-    }
 
-    const img = new Image();
-    img.onload = () => {
-        const texture = new THREE.CanvasTexture(img);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.repeat.x = -1;
-        
-        this.sphereMesh.material.map = texture;
-        this.sphereMesh.material.needsUpdate = true;
-        
-        console.log('✅ تم تحميل صورة المشهد الجديد');
-    };
-    img.onerror = (err) => {
-        console.error('❌ فشل تحميل الصورة:', err);
-    };
-    img.src = imageData;
-}
+    loadSceneImage(imageData) {
+        if (!this.sphereMesh || !this.sphereMesh.material) {
+            console.warn('⚠️ sphereMesh غير جاهز، سيتم إنشاؤه');
+            // إنشاء كرة جديدة إذا لم تكن موجودة
+            const geometry = new THREE.SphereGeometry(500, 64, 64);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0x333344, 
+                side: THREE.BackSide 
+            });
+            this.sphereMesh = new THREE.Mesh(geometry, material);
+            this.scene.add(this.sphereMesh);
+        }
+
+        const img = new Image();
+        img.onload = () => {
+            const texture = new THREE.CanvasTexture(img);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.repeat.x = -1;
+            
+            this.sphereMesh.material.map = texture;
+            this.sphereMesh.material.needsUpdate = true;
+            
+            console.log('✅ تم تحميل صورة المشهد الجديد');
+        };
+        img.onerror = (err) => {
+            console.error('❌ فشل تحميل الصورة:', err);
+        };
+        img.src = imageData;
+    }
 
     setupEvents() {
         this.renderer.domElement.addEventListener('click', (e) => this.onClick(e));
@@ -145,40 +149,41 @@ loadSceneImage(imageData) {
         window.addEventListener('keydown', (e) => this.onKeyDown(e));
         window.addEventListener('resize', () => this.onResize());
     }
-onClick(e) {
-    if (!this.sphereMesh || e.target !== this.renderer.domElement) return;
-    
-    const mouse = new THREE.Vector2();
-    mouse.x = (e.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
-    mouse.y = -(e.clientY / this.renderer.domElement.clientHeight) * 2 + 1;
 
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, this.camera);
-    
-    const hits = raycaster.intersectObject(this.sphereMesh);
-
-    if (hits.length) {
-        const surfacePoint = hits[0].point.clone();
+    onClick(e) {
+        if (!this.sphereMesh || e.target !== this.renderer.domElement) return;
         
-        // ✅ إزاحة النقطة للخارج قليلاً
-        const direction = surfacePoint.clone().normalize();
-        const offsetPoint = direction.multiplyScalar(502); // 500 + 2
-        
-        console.log('📍 نقطة على السطح:', surfacePoint);
-        console.log('📍 نقطة بعد الإزاحة:', offsetPoint);
+        const mouse = new THREE.Vector2();
+        mouse.x = (e.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
+        mouse.y = -(e.clientY / this.renderer.domElement.clientHeight) * 2 + 1;
 
-        if (window.measurementTools?.measureMode) {
-            window.measurementTools.handleClick(offsetPoint);
-        } else if (this.hotspotMode) {
-            this.addHotspot(surfacePoint); // النقاط تبقى على السطح
-        } else if (window.pathTools?.drawMode) {
-            window.pathTools.addPoint(offsetPoint);
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, this.camera);
+        
+        const hits = raycaster.intersectObject(this.sphereMesh);
+
+        if (hits.length) {
+            const surfacePoint = hits[0].point.clone();
+            
+            // ✅ إزاحة النقطة للخارج قليلاً
+            const direction = surfacePoint.clone().normalize();
+            const offsetPoint = direction.multiplyScalar(502); // 500 + 2
+            
+            console.log('📍 نقطة على السطح:', surfacePoint);
+            console.log('📍 نقطة بعد الإزاحة:', offsetPoint);
+
+            if (window.measurementTools && window.measurementTools.measureMode) {
+                window.measurementTools.handleClick(offsetPoint);
+            } else if (this.hotspotMode) {
+                this.addHotspot(surfacePoint); // النقاط تبقى على السطح
+            } else if (window.pathTools && window.pathTools.drawMode) {
+                window.pathTools.addPoint(offsetPoint);
+            }
         }
     }
-}
 
     onMouseMove(e) {
-        if (!window.pathTools?.drawMode || !this.sphereMesh) return;
+        if (!window.pathTools || !window.pathTools.drawMode || !this.sphereMesh) return;
         
         const mouse = new THREE.Vector2();
         mouse.x = (e.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
@@ -195,7 +200,7 @@ onClick(e) {
     }
 
     onKeyDown(e) {
-        if (!window.pathTools?.drawMode) return;
+        if (!window.pathTools || !window.pathTools.drawMode) return;
         
         switch(e.key) {
             case 'Enter': e.preventDefault(); window.pathTools.saveCurrentPath(); break;
@@ -210,7 +215,9 @@ onClick(e) {
     }
 
     undoLastPoint() {
-        if (window.pathTools?.selectedPoints?.length > 0) {
+        if (window.pathTools && 
+            window.pathTools.selectedPoints && 
+            window.pathTools.selectedPoints.length > 0) {
             window.pathTools.selectedPoints.pop();
             const last = window.pathTools.pointMarkers.pop();
             if (last) this.scene.remove(last);
@@ -224,143 +231,151 @@ onClick(e) {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         if (window.hotspotSystem) window.hotspotSystem.updatePositions();
     }
-addHotspot(position) {
-    // التحقق من وجود مشهد نشط
-    if (!window.sceneManager?.currentScene) {
-        alert('❌ لا يوجد مشهد نشط');
-        this.hotspotMode = null;
-        document.body.style.cursor = 'default';
-        return;
-    }
 
-    // ===== إضافة نقطة معلومات =====
-    if (this.hotspotMode === 'INFO') {
-        const title = prompt('📝 أدخل عنوان المعلومات:');
-        if (!title) {
-            this.hotspotMode = null;
-            document.body.style.cursor = 'default';
-            console.log('🔄 تم إلغاء إضافة نقطة معلومات');
-            return;
-        }
-        
-        const content = prompt('📄 أدخل نص المعلومات:');
-        if (!content) {
-            this.hotspotMode = null;
-            document.body.style.cursor = 'default';
-            console.log('🔄 تم إلغاء إضافة نقطة معلومات');
-            return;
-        }
-
-        // إضافة نقطة المعلومات
-        window.sceneManager.addHotspot(
-            window.sceneManager.currentScene.id,
-            'INFO',
-            position,
-            { title, content }
-        );
-        
-        window.hotspotSystem?.create(
-            position, 
-            'INFO', 
-            { title, content }, 
-            `hotspot-${Date.now()}`
-        );
-        
-        console.log('✅ تم إضافة نقطة معلومات');
-
-    // ===== إضافة نقطة انتقال =====
-    } else if (this.hotspotMode === 'SCENE') {
-        const otherScenes = window.sceneManager.scenes.filter(
-            s => s.id !== window.sceneManager.currentScene.id
-        );
-        
-        if (otherScenes.length === 0) {
-            alert('❌ لا يوجد مشاهد أخرى');
+    addHotspot(position) {
+        // التحقق من وجود مشهد نشط
+        if (!window.sceneManager || !window.sceneManager.currentScene) {
+            alert('❌ لا يوجد مشهد نشط');
             this.hotspotMode = null;
             document.body.style.cursor = 'default';
             return;
         }
 
-        // عرض قائمة المشاهد المتاحة
-        let sceneList = '';
-        otherScenes.forEach((s, index) => {
-            sceneList += `${index + 1}. ${s.name}\n`;
-        });
-        
-        const choice = prompt(
-            `اختر المشهد للانتقال إليه:\n\n${sceneList}\nأدخل الرقم (أو اضغط Cancel للإلغاء):`
-        );
-        
-        if (!choice) {
-            this.hotspotMode = null;
-            document.body.style.cursor = 'default';
-            console.log('🔄 تم إلغاء إضافة نقطة انتقال');
-            return;
-        }
-
-        const selectedIndex = parseInt(choice) - 1;
-        
-        // التحقق من صحة الرقم
-        if (selectedIndex < 0 || selectedIndex >= otherScenes.length || isNaN(selectedIndex)) {
-            alert('❌ اختيار غير صالح');
-            this.hotspotMode = null;
-            document.body.style.cursor = 'default';
-            return;
-        }
-
-        const targetScene = otherScenes[selectedIndex];
-        const description = prompt(
-            '📝 أدخل وصفاً لهذه النقطة (اختياري):',
-            `انتقال إلى ${targetScene.name}`
-        ) || `انتقال إلى ${targetScene.name}`;
-
-        // إضافة نقطة الانتقال
-        const hotspot = window.sceneManager.addHotspot(
-            window.sceneManager.currentScene.id,
-            'SCENE',
-            position,
-            { 
-                targetSceneId: targetScene.id, 
-                targetSceneName: targetScene.name, 
-                description 
+        // ===== إضافة نقطة معلومات =====
+        if (this.hotspotMode === 'INFO') {
+            const title = prompt('📝 أدخل عنوان المعلومات:');
+            if (!title) {
+                this.hotspotMode = null;
+                document.body.style.cursor = 'default';
+                console.log('🔄 تم إلغاء إضافة نقطة معلومات');
+                return;
             }
-        );
-        
-        if (hotspot) {
-            window.hotspotSystem?.create(
-                position, 
-                'SCENE', 
+            
+            const content = prompt('📄 أدخل نص المعلومات:');
+            if (!content) {
+                this.hotspotMode = null;
+                document.body.style.cursor = 'default';
+                console.log('🔄 تم إلغاء إضافة نقطة معلومات');
+                return;
+            }
+
+            // إضافة نقطة المعلومات
+            window.sceneManager.addHotspot(
+                window.sceneManager.currentScene.id,
+                'INFO',
+                position,
+                { title, content }
+            );
+            
+            if (window.hotspotSystem) {
+                window.hotspotSystem.create(
+                    position, 
+                    'INFO', 
+                    { title, content }, 
+                    `hotspot-${Date.now()}`
+                );
+            }
+            
+            console.log('✅ تم إضافة نقطة معلومات');
+
+        // ===== إضافة نقطة انتقال =====
+        } else if (this.hotspotMode === 'SCENE') {
+            const otherScenes = window.sceneManager.scenes.filter(
+                s => s.id !== window.sceneManager.currentScene.id
+            );
+            
+            if (otherScenes.length === 0) {
+                alert('❌ لا يوجد مشاهد أخرى');
+                this.hotspotMode = null;
+                document.body.style.cursor = 'default';
+                return;
+            }
+
+            // عرض قائمة المشاهد المتاحة
+            let sceneList = '';
+            otherScenes.forEach((s, index) => {
+                sceneList += `${index + 1}. ${s.name}\n`;
+            });
+            
+            const choice = prompt(
+                `اختر المشهد للانتقال إليه:\n\n${sceneList}\nأدخل الرقم (أو اضغط Cancel للإلغاء):`
+            );
+            
+            if (!choice) {
+                this.hotspotMode = null;
+                document.body.style.cursor = 'default';
+                console.log('🔄 تم إلغاء إضافة نقطة انتقال');
+                return;
+            }
+
+            const selectedIndex = parseInt(choice) - 1;
+            
+            // التحقق من صحة الرقم
+            if (selectedIndex < 0 || selectedIndex >= otherScenes.length || isNaN(selectedIndex)) {
+                alert('❌ اختيار غير صالح');
+                this.hotspotMode = null;
+                document.body.style.cursor = 'default';
+                return;
+            }
+
+            const targetScene = otherScenes[selectedIndex];
+            const description = prompt(
+                '📝 أدخل وصفاً لهذه النقطة (اختياري):',
+                `انتقال إلى ${targetScene.name}`
+            ) || `انتقال إلى ${targetScene.name}`;
+
+            // إضافة نقطة الانتقال
+            const hotspot = window.sceneManager.addHotspot(
+                window.sceneManager.currentScene.id,
+                'SCENE',
+                position,
                 { 
                     targetSceneId: targetScene.id, 
-                    targetSceneName: targetScene.name,
+                    targetSceneName: targetScene.name, 
                     description 
-                }, 
-                hotspot.id
+                }
             );
-            console.log(`✅ تم إضافة نقطة انتقال إلى: ${targetScene.name}`);
+            
+            if (hotspot && window.hotspotSystem) {
+                window.hotspotSystem.create(
+                    position, 
+                    'SCENE', 
+                    { 
+                        targetSceneId: targetScene.id, 
+                        targetSceneName: targetScene.name,
+                        description 
+                    }, 
+                    hotspot.id
+                );
+                console.log(`✅ تم إضافة نقطة انتقال إلى: ${targetScene.name}`);
+            }
         }
-    }
 
-    // ===== إعادة تعيين الحالة في جميع الأحوال =====
-    this.hotspotMode = null;
-    document.body.style.cursor = 'default';
-    
-    // تحديث واجهة المستخدم
-    if (window.uiManager) {
-        window.uiManager.updateSceneList();
-        window.uiManager.showSuccess('تم إضافة النقطة بنجاح');
+        // ===== إعادة تعيين الحالة في جميع الأحوال =====
+        this.hotspotMode = null;
+        document.body.style.cursor = 'default';
+        
+        // تحديث واجهة المستخدم
+        if (window.uiManager) {
+            window.uiManager.updateSceneList();
+            window.uiManager.showSuccess('تم إضافة النقطة بنجاح');
+        }
+        
+        // تعطيل أي أزرار Hotspot نشطة في الواجهة
+        const sceneBtn = document.getElementById('hotspotScene');
+        const infoBtn = document.getElementById('hotspotInfo');
+        
+        if (sceneBtn) sceneBtn.classList.remove('active');
+        if (infoBtn) infoBtn.classList.remove('active');
+        
+        console.log('🔄 تم العودة للوضع العادي');
     }
-    
-    // تعطيل أي أزرار Hotspot نشطة في الواجهة
-    const sceneBtn = document.getElementById('hotspotScene');
-    const infoBtn = document.getElementById('hotspotInfo');
-    
-    if (sceneBtn) sceneBtn.classList.remove('active');
-    if (infoBtn) infoBtn.classList.remove('active');
-    
-    console.log('🔄 تم العودة للوضع العادي');
-}
-// تشغيل التطبيق بعد تحميل الصفحة
+} // ✅ هذا القوس يغلق الكلاس ActualViewStudio
+
+// =======================================
+// 🚀 تشغيل التطبيق (خارج الكلاس)
+// =======================================
+
 window.addEventListener('load', () => {
     window.app = new ActualViewStudio();
 });
