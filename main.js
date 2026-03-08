@@ -1,9 +1,17 @@
 // =======================================
 // ACTUAL VIEW STUDIO - MAIN ENTRY POINT
 // =======================================
+// =======================================
+// ACTUAL VIEW STUDIO - MAIN ENTRY POINT
+// =======================================
 
-import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+// ✅ استخدام THREE من window (محمل عبر CDN في index.html)
+const THREE = window.THREE;
+const OrbitControls = THREE.OrbitControls;
+
+console.log('✅ THREE loaded:', !!THREE);
+console.log('✅ OrbitControls loaded:', !!OrbitControls);
+
 import { SceneManager } from './src/core/SceneManager.js';
 import { ProjectManager } from './src/core/ProjectManager.js';
 import { HotspotSystem } from './src/core/HotspotSystem.js';
@@ -13,6 +21,7 @@ import { ExportTools } from './src/tools/ExportTools.js';
 import { UIManager } from './src/ui/UIManager.js';
 
 class ActualViewStudio {
+
     constructor() {
         console.log('🚀 بدء تشغيل ACTUAL VIEW STUDIO...');
         
