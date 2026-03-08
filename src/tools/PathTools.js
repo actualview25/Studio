@@ -161,58 +161,62 @@ export class PathTools {
             console.warn('⚠️ لا يوجد مشهد نشط لحفظ المسارات');
         }
     }
-
-    // ===== إنشاء مسار مستقيم (مع الإزاحة) =====
-    createStraightPath(points, type = null) {
-        if (points.length < 2) return;
+createStraightPath(points, type = null) {
+    if (points.length < 2) return;
+    
+    const pathType = type || this.currentPathType;
+    const color = this.pathColors[pathType];
+    const pathId = `path-${Date.now()}-${Math.random()}`;
+    let createdCount = 0;
+    
+    for (let i = 0; i < points.length - 1; i++) {
+        const start = points[i];
+        const end = points[i + 1];
         
-        const pathType = type || this.currentPathType;
-        const color = this.pathColors[pathType];
-        const pathId = `path-${Date.now()}-${Math.random()}`;
-        let createdCount = 0;
+        // التأكد من أن جميع النقاط على المسافة الصحيحة
+        const correctedStart = this.correctPosition(start);
+        const correctedEnd = this.correctPosition(end);
         
-        for (let i = 0; i < points.length - 1; i++) {
-            const start = points[i];
-            const end = points[i + 1];
-            
-            // التأكد من أن جميع النقاط على المسافة الصحيحة
-            const correctedStart = this.correctPosition(start);
-            const correctedEnd = this.correctPosition(end);
-            
-            const direction = new THREE.Vector3().subVectors(correctedEnd, correctedStart);
-            const distance = direction.length();
-            
-            if (distance < 5) continue;
-            
-            const cylinderGeo = new THREE.CylinderGeometry(3.5, 3.5, distance, 12);
-            const quaternion = new THREE.Quaternion();
-            quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
-            
-            const cylinder = new THREE.Mesh(cylinderGeo, new THREE.MeshStandardMaterial({
-                color: color,
-                emissive: color,
-                emissiveIntensity: 0.4
-            }));
-            cylinder.applyQuaternion(quaternion);
-            
-            const center = new THREE.Vector3().addVectors(correctedStart, correctedEnd).multiplyScalar(0.5);
-            cylinder.position.copy(center);
-            
-            cylinder.userData = { 
-                type: pathType, 
-                pathId: pathId, 
-                points: [correctedStart.clone(), correctedEnd.clone()] 
-            };
-            
-            this.scene.add(cylinder);
-            this.paths.push(cylinder);
-            createdCount++;
-        }
+        const direction = new THREE.Vector3().subVectors(correctedEnd, correctedStart);
+        const distance = direction.length();
         
-        if (createdCount > 0) {
-            console.log(`🛤️ تم إنشاء ${createdCount} قطعة مسار من نوع ${pathType} على نصف قطر ${this.PATH_RADIUS}`);
-        }
+        if (distance < 5) continue;
+        
+        const cylinderGeo = new THREE.CylinderGeometry(3.5, 3.5, distance, 12);
+        const quaternion = new THREE.Quaternion();
+        quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+        
+        const cylinder = new THREE.Mesh(cylinderGeo, new THREE.MeshStandardMaterial({
+            color: color,
+            emissive: color,
+            emissiveIntensity: 0.4
+        }));
+        
+        // ✅ الأهم: رفع المسار فوق كل شيء
+        cylinder.renderOrder = 999; // قيمة عالية جداً
+        cylinder.material.depthTest = false; // إلغاء اختبار العمق
+        cylinder.material.depthWrite = false; // إلغاء كتابة العمق
+        
+        cylinder.applyQuaternion(quaternion);
+        
+        const center = new THREE.Vector3().addVectors(correctedStart, correctedEnd).multiplyScalar(0.5);
+        cylinder.position.copy(center);
+        
+        cylinder.userData = { 
+            type: pathType, 
+            pathId: pathId, 
+            points: [correctedStart.clone(), correctedEnd.clone()] 
+        };
+        
+        this.scene.add(cylinder);
+        this.paths.push(cylinder);
+        createdCount++;
     }
+    
+    if (createdCount > 0) {
+        console.log(`🛤️ تم إنشاء ${createdCount} قطعة مسار من نوع ${pathType} (مرئية فوق كل شيء)`);
+    }
+}
 
     // ===== مسح الرسم الحالي =====
     clearCurrentDrawing() {
