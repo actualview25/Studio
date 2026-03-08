@@ -1,7 +1,6 @@
 // =======================================
 // ACTUAL VIEW STUDIO - PROJECT MANAGER
 // =======================================
-import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
 export class ProjectManager {
     constructor() {
         this.projects = [];
