@@ -224,84 +224,142 @@ onClick(e) {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         if (window.hotspotSystem) window.hotspotSystem.updatePositions();
     }
+addHotspot(position) {
+    // التحقق من وجود مشهد نشط
+    if (!window.sceneManager?.currentScene) {
+        alert('❌ لا يوجد مشهد نشط');
+        this.hotspotMode = null;
+        document.body.style.cursor = 'default';
+        return;
+    }
 
-    addHotspot(position) {
-        if (!window.sceneManager?.currentScene) {
-            alert('❌ لا يوجد مشهد نشط');
+    // ===== إضافة نقطة معلومات =====
+    if (this.hotspotMode === 'INFO') {
+        const title = prompt('📝 أدخل عنوان المعلومات:');
+        if (!title) {
+            this.hotspotMode = null;
+            document.body.style.cursor = 'default';
+            console.log('🔄 تم إلغاء إضافة نقطة معلومات');
+            return;
+        }
+        
+        const content = prompt('📄 أدخل نص المعلومات:');
+        if (!content) {
+            this.hotspotMode = null;
+            document.body.style.cursor = 'default';
+            console.log('🔄 تم إلغاء إضافة نقطة معلومات');
             return;
         }
 
-        if (this.hotspotMode === 'INFO') {
-            const title = prompt('📝 أدخل عنوان المعلومات:');
-            if (!title) return;
-            const content = prompt('📄 أدخل نص المعلومات:');
-            if (!content) return;
-
-            window.sceneManager.addHotspot(
-                window.sceneManager.currentScene.id,
-                'INFO',
-                position,
-                { title, content }
-            );
-            
-            window.hotspotSystem?.create(position, 'INFO', { title, content }, `hotspot-${Date.now()}`);
-            
-        } else if (this.hotspotMode === 'SCENE') {
-            const otherScenes = window.sceneManager.scenes.filter(s => s.id !== window.sceneManager.currentScene.id);
-            
-            if (otherScenes.length === 0) {
-                alert('❌ لا يوجد مشاهد أخرى');
-                return;
-            }
-
-            let sceneList = '';
-            otherScenes.forEach((s, index) => sceneList += `${index + 1}. ${s.name}\n`);
-            
-            const choice = prompt(`اختر المشهد للانتقال إليه:\n\n${sceneList}\nأدخل الرقم:`);
-            if (!choice) return;
-
-            const selectedIndex = parseInt(choice) - 1;
-            if (selectedIndex < 0 || selectedIndex >= otherScenes.length) {
-                alert('❌ اختيار غير صالح');
-                return;
-            }
-
-            const targetScene = otherScenes[selectedIndex];
-            const description = prompt('📝 أدخل وصفاً لهذه النقطة:') || `انتقال إلى ${targetScene.name}`;
-
-            const hotspot = window.sceneManager.addHotspot(
-                window.sceneManager.currentScene.id,
-                'SCENE',
-                position,
-                { targetSceneId: targetScene.id, targetSceneName: targetScene.name, description }
-            );
-            
-            if (hotspot) {
-                window.hotspotSystem?.create(
-                    position, 
-                    'SCENE', 
-                    { targetSceneId: targetScene.id, targetSceneName: targetScene.name }, 
-                    hotspot.id
-                );
-            }
-        }
+        // إضافة نقطة المعلومات
+        window.sceneManager.addHotspot(
+            window.sceneManager.currentScene.id,
+            'INFO',
+            position,
+            { title, content }
+        );
         
-        if (window.uiManager) {
-            window.uiManager.updateSceneList();
+        window.hotspotSystem?.create(
+            position, 
+            'INFO', 
+            { title, content }, 
+            `hotspot-${Date.now()}`
+        );
+        
+        console.log('✅ تم إضافة نقطة معلومات');
+
+    // ===== إضافة نقطة انتقال =====
+    } else if (this.hotspotMode === 'SCENE') {
+        const otherScenes = window.sceneManager.scenes.filter(
+            s => s.id !== window.sceneManager.currentScene.id
+        );
+        
+        if (otherScenes.length === 0) {
+            alert('❌ لا يوجد مشاهد أخرى');
+            this.hotspotMode = null;
+            document.body.style.cursor = 'default';
+            return;
+        }
+
+        // عرض قائمة المشاهد المتاحة
+        let sceneList = '';
+        otherScenes.forEach((s, index) => {
+            sceneList += `${index + 1}. ${s.name}\n`;
+        });
+        
+        const choice = prompt(
+            `اختر المشهد للانتقال إليه:\n\n${sceneList}\nأدخل الرقم (أو اضغط Cancel للإلغاء):`
+        );
+        
+        if (!choice) {
+            this.hotspotMode = null;
+            document.body.style.cursor = 'default';
+            console.log('🔄 تم إلغاء إضافة نقطة انتقال');
+            return;
+        }
+
+        const selectedIndex = parseInt(choice) - 1;
+        
+        // التحقق من صحة الرقم
+        if (selectedIndex < 0 || selectedIndex >= otherScenes.length || isNaN(selectedIndex)) {
+            alert('❌ اختيار غير صالح');
+            this.hotspotMode = null;
+            document.body.style.cursor = 'default';
+            return;
+        }
+
+        const targetScene = otherScenes[selectedIndex];
+        const description = prompt(
+            '📝 أدخل وصفاً لهذه النقطة (اختياري):',
+            `انتقال إلى ${targetScene.name}`
+        ) || `انتقال إلى ${targetScene.name}`;
+
+        // إضافة نقطة الانتقال
+        const hotspot = window.sceneManager.addHotspot(
+            window.sceneManager.currentScene.id,
+            'SCENE',
+            position,
+            { 
+                targetSceneId: targetScene.id, 
+                targetSceneName: targetScene.name, 
+                description 
+            }
+        );
+        
+        if (hotspot) {
+            window.hotspotSystem?.create(
+                position, 
+                'SCENE', 
+                { 
+                    targetSceneId: targetScene.id, 
+                    targetSceneName: targetScene.name,
+                    description 
+                }, 
+                hotspot.id
+            );
+            console.log(`✅ تم إضافة نقطة انتقال إلى: ${targetScene.name}`);
         }
     }
 
-    animate() {
-        requestAnimationFrame(() => this.animate());
-        this.controls.update();
-        this.renderer.render(this.scene, this.camera);
-        
-        if (window.hotspotSystem) {
-            window.hotspotSystem.updatePositions();
-        }
+    // ===== إعادة تعيين الحالة في جميع الأحوال =====
+    this.hotspotMode = null;
+    document.body.style.cursor = 'default';
+    
+    // تحديث واجهة المستخدم
+    if (window.uiManager) {
+        window.uiManager.updateSceneList();
+        window.uiManager.showSuccess('تم إضافة النقطة بنجاح');
     }
+    
+    // تعطيل أي أزرار Hotspot نشطة في الواجهة
+    const sceneBtn = document.getElementById('hotspotScene');
+    const infoBtn = document.getElementById('hotspotInfo');
+    
+    if (sceneBtn) sceneBtn.classList.remove('active');
+    if (infoBtn) infoBtn.classList.remove('active');
+    
+    console.log('🔄 تم العودة للوضع العادي');
 }
-
 // تشغيل التطبيق بعد تحميل الصفحة
 window.addEventListener('load', () => {
     window.app = new ActualViewStudio();
