@@ -2,14 +2,16 @@
 // ACTUAL VIEW STUDIO - MEASUREMENT TOOLS
 // =======================================
 
+import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
+
 export class MeasurementTools {
     constructor(app) {
         this.app = app;
         this.scene = app.scene;
         
-        // ثوابت الكرة والإزاحة (نفس قيم PathTools)
+        // ثوابت الكرة والإزاحة
         this.SPHERE_RADIUS = 500;
-        this.MEASURE_OFFSET = 5; // المسافة خارج الكرة
+        this.MEASURE_OFFSET = 5;
         this.MEASURE_RADIUS = this.SPHERE_RADIUS + this.MEASURE_OFFSET; // 505
         
         this.measureMode = false;
@@ -53,7 +55,6 @@ export class MeasurementTools {
     handleClick(point) {
         if (!this.measureMode) return false;
 
-        // تصحيح المسافة (إزاحة خارج الكرة)
         const correctedPoint = this.correctPosition(point);
 
         if (!this.measureStartPoint) {
@@ -97,7 +98,7 @@ export class MeasurementTools {
             return true;
         }
         
-        // إنشاء مجموعة القياس (مع الإزاحة)
+        // إنشاء مجموعة القياس
         const lineGroup = this.createMeasureLine(this.measureStartPoint, endPoint);
         this.scene.add(lineGroup);
         this.measureGroups.push(lineGroup);
@@ -136,35 +137,31 @@ export class MeasurementTools {
         return true;
     }
 
- createMeasureLine(point1, point2) {
-    const group = new THREE.Group();
-    
-    const start = this.correctPosition(point1);
-    const end = this.correctPosition(point2);
-    
-    const direction = new THREE.Vector3().subVectors(end, start);
-    const distance = direction.length();
-    const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-    
-    const lineGeo = new THREE.CylinderGeometry(3, 3, distance, 12);
-    const lineMat = new THREE.MeshStandardMaterial({
-        color: 0xffaa44,
-        emissive: 0x442200,
-        emissiveIntensity: 0.5
-    });
-    const line = new THREE.Mesh(lineGeo, lineMat);
-    
-    // ✅ رفع القياسات فوق كل شيء
-    line.renderOrder = 998;
-    line.material.depthTest = false;
-    line.material.depthWrite = false;
-const quaternion = new THREE.Quaternion();
-        quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
-        line.applyQuaternion(quaternion);
-        line.position.copy(midPoint);
-        group.add(line)
-     
-}
+    // ===== إنشاء خط القياس (نسخة واحدة فقط) =====
+    createMeasureLine(point1, point2) {
+        const group = new THREE.Group();
+        
+        const start = this.correctPosition(point1);
+        const end = this.correctPosition(point2);
+        
+        const direction = new THREE.Vector3().subVectors(end, start);
+        const distance = direction.length();
+        const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+        
+        // جسم المسطرة
+        const lineGeo = new THREE.CylinderGeometry(3, 3, distance, 12);
+        const lineMat = new THREE.MeshStandardMaterial({
+            color: 0xffaa44,
+            emissive: 0x442200,
+            emissiveIntensity: 0.5
+        });
+        const line = new THREE.Mesh(lineGeo, lineMat);
+        
+        // ✅ رفع القياسات فوق كل شيء
+        line.renderOrder = 998;
+        line.material.depthTest = false;
+        line.material.depthWrite = false;
+        
         const quaternion = new THREE.Quaternion();
         quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
         line.applyQuaternion(quaternion);
@@ -187,7 +184,7 @@ const quaternion = new THREE.Quaternion();
         sphere2.position.copy(end);
         group.add(sphere2);
         
-        // علامات المسطرة (تدرجات)
+        // علامات المسطرة
         const numMarks = Math.floor(distance / 2.5);
         for (let i = 1; i < numMarks; i++) {
             const t = i / numMarks;
@@ -215,7 +212,6 @@ const quaternion = new THREE.Quaternion();
     createMeasureLabel(text, position) {
         const group = new THREE.Group();
         
-        // تصحيح موقع الملصق (أعلى بقليل)
         const basePos = this.correctPosition(position);
         
         const canvas = document.createElement('canvas');
@@ -224,28 +220,23 @@ const quaternion = new THREE.Quaternion();
         canvas.width = 4096;
         canvas.height = 2048;
         
-        // خلفية
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // إطار خارجي
         ctx.strokeStyle = '#ffaa44';
         ctx.lineWidth = 80;
         ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
         
-        // إطار داخلي
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 20;
         ctx.strokeRect(120, 120, canvas.width - 240, canvas.height - 240);
         
-        // نص
         ctx.font = 'bold 800px "Arial", "Segoe UI", sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(text + ' m', canvas.width / 2, canvas.height / 2);
         
-        // ظل
         ctx.shadowColor = '#ffaa44';
         ctx.shadowBlur = 100;
         ctx.fillText(text + ' m', canvas.width / 2, canvas.height / 2);
@@ -255,12 +246,10 @@ const quaternion = new THREE.Quaternion();
         const sprite = new THREE.Sprite(material);
         sprite.scale.set(120, 60, 1);
         
-        // رفع الملصق أعلى من الخط
         const labelPos = basePos.clone().add(new THREE.Vector3(0, 80, 0));
         sprite.position.copy(labelPos);
         group.add(sprite);
         
-        // خط رابط
         const lineGeo = new THREE.BufferGeometry().setFromPoints([basePos, labelPos]);
         const lineMat = new THREE.LineBasicMaterial({ color: 0xffaa44 });
         const line = new THREE.Line(lineGeo, lineMat);
@@ -269,9 +258,8 @@ const quaternion = new THREE.Quaternion();
         return group;
     }
 
-    // ===== إظهار القياسات المحفوظة لمشهد معين =====
+    // ===== إظهار القياسات المحفوظة =====
     showMeasurements(sceneId) {
-        // إزالة القياسات القديمة
         this.measureGroups.forEach(g => this.scene.remove(g));
         this.measureGroups = [];
         
@@ -294,13 +282,11 @@ const quaternion = new THREE.Quaternion();
         console.log(`📏 تم إظهار ${measurements.length} قياس`);
     }
 
-    // ===== إخفاء جميع القياسات =====
     hideAll() {
         this.measureGroups.forEach(g => this.scene.remove(g));
         this.measureGroups = [];
     }
 
-    // ===== تفريغ الموارد =====
     dispose() {
         this.hideAll();
         if (this.measureTempLine) {
