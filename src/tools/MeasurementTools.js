@@ -136,27 +136,35 @@ export class MeasurementTools {
         return true;
     }
 
-    // ===== إنشاء خط القياس (مسطرة) =====
-    createMeasureLine(point1, point2) {
-        const group = new THREE.Group();
-        
-        // تصحيح المسافات (تأكيد)
-        const start = this.correctPosition(point1);
-        const end = this.correctPosition(point2);
-        
-        const direction = new THREE.Vector3().subVectors(end, start);
-        const distance = direction.length();
-        const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-        
-        // الجسم الرئيسي للمسطرة
-        const lineGeo = new THREE.CylinderGeometry(3, 3, distance, 12);
-        const lineMat = new THREE.MeshStandardMaterial({
-            color: 0xffaa44,
-            emissive: 0x442200,
-            emissiveIntensity: 0.5
-        });
-        const line = new THREE.Mesh(lineGeo, lineMat);
-        
+ createMeasureLine(point1, point2) {
+    const group = new THREE.Group();
+    
+    const start = this.correctPosition(point1);
+    const end = this.correctPosition(point2);
+    
+    const direction = new THREE.Vector3().subVectors(end, start);
+    const distance = direction.length();
+    const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+    
+    const lineGeo = new THREE.CylinderGeometry(3, 3, distance, 12);
+    const lineMat = new THREE.MeshStandardMaterial({
+        color: 0xffaa44,
+        emissive: 0x442200,
+        emissiveIntensity: 0.5
+    });
+    const line = new THREE.Mesh(lineGeo, lineMat);
+    
+    // ✅ رفع القياسات فوق كل شيء
+    line.renderOrder = 998;
+    line.material.depthTest = false;
+    line.material.depthWrite = false;
+const quaternion = new THREE.Quaternion();
+        quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+        line.applyQuaternion(quaternion);
+        line.position.copy(midPoint);
+        group.add(line)
+     
+}
         const quaternion = new THREE.Quaternion();
         quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
         line.applyQuaternion(quaternion);
