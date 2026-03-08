@@ -2,7 +2,6 @@
 // ACTUAL VIEW STUDIO - MEASUREMENT TOOLS
 // =======================================
 
-import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
 
 export class MeasurementTools {
     constructor(app) {
