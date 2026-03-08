@@ -1,9 +1,6 @@
 // =======================================
 // ACTUAL VIEW STUDIO - MAIN ENTRY POINT
 // =======================================
-// =======================================
-// ACTUAL VIEW STUDIO - MAIN ENTRY POINT
-// =======================================
 
 // ✅ استخدام THREE من window (محمل عبر CDN في index.html)
 const THREE = window.THREE;
@@ -378,6 +375,24 @@ class ActualViewStudio {
         
         console.log('🔄 تم العودة للوضع العادي');
     }
+
+    // ✅ إضافة دالة animate هنا
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        
+        if (this.controls) {
+            this.controls.update();
+        }
+        
+        if (this.renderer) {
+            this.renderer.render(this.scene, this.camera);
+        }
+        
+        if (window.hotspotSystem) {
+            window.hotspotSystem.updatePositions();
+        }
+    }
+
 } // ✅ هذا القوس يغلق الكلاس ActualViewStudio
 
 // =======================================
