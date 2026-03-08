@@ -115,17 +115,19 @@
 
     <script type="module" src="main.js"></script>
     
-    <script>
-        window.changeType = function(type) {
-            if (window.setCurrentPathType) {
-                window.setCurrentPathType(type);
-            }
-        };
-        
-        function toggleProjectPanel() {
-            const panel = document.getElementById('projectPanel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+   <script>
+    window.changeType = function(type) {
+        if (window.pathTools) {
+            window.pathTools.setType(type);
+        } else {
+            console.warn('⚠️ pathTools غير جاهز');
         }
-    </script>
+    };
+    
+    function toggleProjectPanel() {
+        const panel = document.getElementById('projectPanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+</script>
 </body>
 </html>
