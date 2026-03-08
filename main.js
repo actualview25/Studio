@@ -2,9 +2,10 @@
 // ACTUAL VIEW STUDIO - MAIN ENTRY POINT
 // =======================================
 
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js';
 
+// ... باقي الاستيرادات
 import { SceneManager } from './src/core/SceneManager.js';
 import { ProjectManager } from './src/core/ProjectManager.js';
 import { HotspotSystem } from './src/core/HotspotSystem.js';
