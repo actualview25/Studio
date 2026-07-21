@@ -186,16 +186,16 @@ export class ExportTools {
         }
     }
 
-    generatePlayerHTML(projectName) {
-        return `<!DOCTYPE html>
+ generatePlayerHTML(projectName) {
+    return `<!DOCTYPE html>
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
     <title>tour-BIM-As-built</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>
     <style>
         * { 
             margin: 0; 
@@ -216,7 +216,6 @@ export class ExportTools {
             background: #000; 
         }
 
-        /* ===== شريط الأدوات العلوي ===== */
         .toolbar {
             position: fixed; 
             top: 0; 
@@ -246,7 +245,6 @@ export class ExportTools {
             border-radius: 30px; 
         }
 
-        /* ===== أزرار التحكم السفلية ===== */
         #autoRotateBtn {
             position: fixed; 
             bottom: 20px; 
@@ -278,7 +276,6 @@ export class ExportTools {
             font-size: 14px;
         }
 
-        /* ===== لوحة التحكم بالمسارات ===== */
         .paths-control-panel {
             position: fixed; 
             top: 80px; 
@@ -293,14 +290,13 @@ export class ExportTools {
             min-width: 200px;
         }
 
-        /* ===== لوحة قائمة المشاهد ===== */
         .scene-list-panel {
             position: fixed; 
             top: 50%; 
             left: 20px; 
             transform: translateY(-50%);
             width: 260px; 
-            max-height: 70vh; 
+            max-height: min(70vh, 500px);
             background: rgba(20,30,40,0.25);
             backdrop-filter: blur(12px); 
             border: 1px solid rgba(74,108,143,0.3);
@@ -319,9 +315,10 @@ export class ExportTools {
         }
 
         .scene-list { 
-            max-height: calc(70vh - 60px); 
+            flex: 1;
             overflow-y: auto; 
             padding: 8px; 
+            max-height: calc(min(70vh, 500px) - 60px);
         }
 
         .scene-item { 
@@ -359,7 +356,6 @@ export class ExportTools {
             margin-right: 8px;
         }
 
-        /* ===== أنماط النقاط الساخنة (Hotspots) المحسنة ===== */
         .hotspot-marker {
             position: absolute;
             transform: translate(-50%, -50%);
@@ -415,7 +411,6 @@ export class ExportTools {
             opacity: 1;
         }
 
-        /* ===== أنماط القياسات المحسنة ===== */
         .measurement-line {
             position: absolute; 
             pointer-events: none; 
@@ -456,7 +451,6 @@ export class ExportTools {
             line-height: 1.4;
         }
 
-        /* ===== لوحة المعلومات ===== */
         #infoPanel {
             position: absolute;
             background: rgba(30, 40, 50, 0.95);
@@ -505,7 +499,6 @@ export class ExportTools {
             opacity: 0.9;
         }
 
-        /* ===== أزرار التحكم للهاتف ===== */
         #mobileControls {
             position: fixed;
             bottom: 150px;
@@ -542,55 +535,19 @@ export class ExportTools {
             transform: scale(0.95);
         }
 
-        /* ===== تحسينات للهواتف (Responsive Design) ===== */
         @media (max-width: 768px) {
             .scene-list-panel {
                 width: 220px;
-                max-height: 50vh;
-                top: 20%;
-                transform: translateY(0);
-                left: 10px;
+                max-height: 60vh;
+                top: 50%;
+                transform: translateY(-50%);
+                left: 70px;
                 box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             }
             .scene-list-panel.hidden {
                 transform: translateX(-120%);
                 opacity: 0;
-                pointer-events: none;
             }
-            
-            .scene-list {
-                max-height: calc(50vh - 60px);
-            }
-            
-            .scene-item {
-                padding: 8px 10px;
-                font-size: 14px;
-            }
-            
-            .scene-icon {
-                font-size: 16px;
-            }
-            
-            .paths-control-panel {
-                display: none;
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 220px;
-                z-index: 1000;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-                background: rgba(20,30,40,0.9);
-            }
-            
-            .paths-control-panel.show {
-                display: block;
-            }
-            
-            #mobileControls {
-                display: flex;
-            }
-            
             #toggleMeasurements {
                 bottom: 80px;
                 right: 10px;
@@ -656,48 +613,6 @@ export class ExportTools {
                 padding: 4px 10px;
             }
         }
-        /* تعديل max-height ليكون مناسباً */
-.scene-list-panel {
-    position: fixed; 
-    top: 50%; 
-    left: 20px; 
-    transform: translateY(-50%);
-    width: 260px; 
-    max-height: min(70vh, 500px); /* حد أقصى 500px أو 70% من الشاشة */
-    background: rgba(20,30,40,0.25);
-    backdrop-filter: blur(12px); 
-    border: 1px solid rgba(74,108,143,0.3);
-    border-radius: 12px; 
-    color: white; 
-    z-index: 900;
-    display: flex; 
-    flex-direction: column; 
-    overflow: hidden;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-/* ضبط ارتفاع المحتوى القابل للسكرول */
-.scene-list { 
-    flex: 1;
-    overflow-y: auto; 
-    padding: 8px; 
-    max-height: calc(min(70vh, 500px) - 60px); /* ناقص ارتفاع الـ header */
-}
-
-/* للهاتف */
-@media (max-width: 768px) {
-    .scene-list-panel {
-        width: 220px;
-        max-height: 60vh; /* أطول بقليل في الهاتف */
-        top: 50%;
-        transform: translateY(-50%);
-        left: 70px; /* بجانب الأزرار */
-    }
-    
-    .scene-list {
-        max-height: calc(60vh - 60px);
-    }
-}
     </style>
 </head>
 <body>
@@ -723,8 +638,8 @@ export class ExportTools {
         <div class="scene-list" id="sceneList"></div>
     </div>
 
-    <script>
-        // =======================================
+    <script>`;
+   // =======================================
         // دوال مساعدة للمسارات والقياسات
         // =======================================
         
@@ -815,7 +730,7 @@ export class ExportTools {
                     const response = await fetch('manifest.json');
                     this.manifest = await response.json();
                     this.scenes = this.manifest.scenes;
-                    console.log(`📋 تم تحميل manifest مع ${this.scenes.length} مشهد`);
+                    console.log(\`📋 تم تحميل manifest مع \${this.scenes.length} مشهد\`);
                     return this.scenes;
                 } catch (error) {
                     console.error('❌ فشل تحميل manifest:', error);
@@ -827,7 +742,7 @@ export class ExportTools {
                 if (this.isLoading) return null;
                 
                 if (this.loadedScenes.has(index)) {
-                    console.log(`✅ مشهد ${index} من الذاكرة المخبأة`);
+                    console.log(\`✅ مشهد \${index} من الذاكرة المخبأة\`);
                     return this.loadedScenes.get(index);
                 }
                 
@@ -835,9 +750,9 @@ export class ExportTools {
                 
                 try {
                     const sceneInfo = this.scenes[index];
-                    if (!sceneInfo) throw new Error(`المشهد ${index} غير موجود`);
+                    if (!sceneInfo) throw new Error(\`المشهد \${index} غير موجود\`);
                     
-                    console.log(`📥 تحميل المشهد ${index}: ${sceneInfo.name}`);
+                    console.log(\`📥 تحميل المشهد \${index}: \${sceneInfo.name}\`);
                     const response = await fetch(sceneInfo.data);
                     const sceneData = await response.json();
                     
@@ -848,7 +763,7 @@ export class ExportTools {
                     return sceneData;
                     
                 } catch (error) {
-                    console.error(`❌ فشل تحميل المشهد ${index}:`, error);
+                    console.error(\`❌ فشل تحميل المشهد \${index}:\`, error);
                     this.isLoading = false;
                     return null;
                 }
@@ -859,7 +774,7 @@ export class ExportTools {
                 
                 for (let [index] of this.loadedScenes) {
                     if (!indicesToKeep.includes(index)) {
-                        console.log(`🧹 تفريغ المشهد ${index} من الذاكرة`);
+                        console.log(\`🧹 تفريغ المشهد \${index} من الذاكرة\`);
                         this.loadedScenes.delete(index);
                     }
                 }
@@ -953,560 +868,10 @@ export class ExportTools {
                 sceneData.measurements.forEach(m => measurementElements.push(createMeasurementElement(m)));
             }
         }
-
-        // ===== دوال المشاهد =====
-        function updateSceneList() {
-            const list = document.getElementById('sceneList');
-            if (!list || !sceneLoader.scenes) return;
-            
-            list.innerHTML = '';
-            sceneLoader.scenes.forEach((scene, i) => {
-                const item = document.createElement('div');
-                item.className = 'scene-item' + (i === currentSceneIndex ? ' active' : '');
-                item.innerHTML = '<span class="scene-icon">' + (i === 0 ? '🏠' : '🌄') + '</span>' +
-                    '<span class="scene-name">' + scene.name + '</span>' +
-                    '<span class="scene-hotspot-count">' + (scene.hotspotsCount || 0) + '</span>';
-                item.onclick = () => loadScene(i);
-                list.appendChild(item);
-            });
-        }
-
-        // ===== دوال لوحة المعلومات =====
-        function showInfoPanel(content, x, y) {
-            const panel = document.getElementById('infoPanel');
-            
-            let formattedContent = '';
-            if (content.includes('\n')) {
-                const parts = content.split('\n');
-                formattedContent = `<strong>${parts[0]}</strong><div class="info-content">${parts.slice(1).join('<br>')}</div>`;
-            } else {
-                formattedContent = `<div class="info-content">${content}</div>`;
-            }
-            
-            panel.innerHTML = formattedContent;
-            panel.style.left = (x + 20) + 'px';
-            panel.style.top = (y - 20) + 'px';
-            panel.style.display = 'block';
-        }
-
-        function hideInfoPanel() {
-            document.getElementById('infoPanel').style.display = 'none';
-        }
-
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.hotspot-marker')) return;
-            hideInfoPanel();
-        });
-        
-        // ===== دوال Hotspots =====
-        function createHotspotElement(x, y, type, data) {
-            const div = document.createElement('div');
-            div.className = 'hotspot-marker';
-            div.style.left = x + 'px';
-            div.style.top = y + 'px';
-            
-            const url = type === 'SCENE' ? ICONS.hotspot : ICONS.info;
-            const color = type === 'SCENE' ? '#44aaff' : '#ffaa44';
-            const text = type === 'SCENE' ? (data.targetSceneName || 'انتقال') : (data.title || 'معلومات');
-            
-            div.innerHTML = `
-                <img src="${url}" style="border:2px solid ${color}; width:40px; height:40px; border-radius:50%; pointer-events:none;">
-                <span class="hotspot-label" style="border:2px solid ${color};">${text}</span>
-            `;
-            
-            div.onclick = (event) => {
-                event.stopPropagation();
-                
-                if (type === 'SCENE') {
-                    if (data.targetSceneId) {
-                        const idx = sceneLoader.scenes.findIndex(s => s.id === data.targetSceneId);
-                        if (idx !== -1) loadScene(idx);
-                    }
-                } else if (type === 'INFO') {
-                    const infoText = data.title + (data.content ? '\n' + data.content : '');
-                    showInfoPanel(infoText, event.clientX, event.clientY);
-                }
-            };
-            
-            return div;
-        }
-
-        function updateHotspotsPosition() {
-            const w = window.innerWidth, h = window.innerHeight;
-            Object.values(hotspotMarkers).forEach(el => {
-                if (!el._worldPosition) return;
-
-                const proj = el._worldPosition.clone().project(camera);
-
-                if (proj.z < -1 || proj.z > 1) {
-                    el.style.display = 'none';
-                    return;
-                }
-
-                const x = (proj.x * 0.5 + 0.5) * w;
-                const y = (-proj.y * 0.5 + 0.5) * h;
-
-                if (x < -100 || x > w + 100 || y < -100 || y > h + 100) {
-                    el.style.display = 'none';
-                    return;
-                }
-
-                el.style.display = 'block';
-                el.style.left = x + 'px';
-                el.style.top = y + 'px';
-            });
-        }
-        
-        // ===== دوال المسارات =====
-        function togglePathsByType(type, visible) {
-            allPaths.forEach(p => { if (p.userData?.type === type) p.visible = visible; });
-        }
-
-        function createPathsTogglePanel() {
-            const list = document.getElementById('pathsToggleList');
-            if (!list) return;
-            list.innerHTML = '';
-            
-            ['EL','AC','WP','WA','GS'].forEach(t => {
-                const div = document.createElement('div');
-                div.style.margin = '8px 0';
-                div.style.display = 'flex';
-                div.style.alignItems = 'center';
-                div.style.gap = '8px';
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = 'toggle-'+t;
-                checkbox.dataset.type = t;
-                checkbox.style.width = '18px';
-                checkbox.style.height = '18px';
-                checkbox.style.cursor = 'pointer';
-                
-                const hasVisiblePaths = allPaths.some(p => p.userData?.type === t && p.visible);
-                checkbox.checked = hasVisiblePaths;
-                
-                checkbox.onchange = e => togglePathsByType(t, e.target.checked);
-                
-                const colorSpan = document.createElement('span');
-                colorSpan.style.display = 'inline-block';
-                colorSpan.style.width = '16px';
-                colorSpan.style.height = '16px';
-                colorSpan.style.background = pathColors[t];
-                colorSpan.style.borderRadius = '4px';
-                
-                const label = document.createElement('span');
-                label.textContent = t;
-                label.style.fontWeight = 'bold';
-                
-                div.appendChild(checkbox);
-                div.appendChild(colorSpan);
-                div.appendChild(label);
-                list.appendChild(div);
-            });
-        }
-
-        // ===== دالة تحميل المشهد =====
-        async function loadScene(index) {
-            console.log(`🔄 تحميل المشهد ${index}`);
-            
-            const sceneData = await sceneLoader.loadScene(index);
-            if (!sceneData) return;
-            
-            currentSceneIndex = index;
-            
-            if (sphereMesh) scene3D.remove(sphereMesh);
-            document.querySelectorAll('.hotspot-marker').forEach(el => el.remove());
-            allPaths.forEach(p => scene3D.remove(p));
-            allPaths = [];
-            hotspotMarkers = {};
-            
-            const texture = await new Promise((resolve, reject) => {
-                new THREE.TextureLoader().load(sceneData.image, resolve, undefined, reject);
-            });
-            
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.repeat.x = -1;
-            
-            sphereMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(500, 128, 128),
-                new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide })
-            );
-            scene3D.add(sphereMesh);
-            
-            if (sceneData.paths && sceneData.paths.length > 0) {
-                console.log('🔄 بناء', sceneData.paths.length, 'مسار');
-                
-                sceneData.paths.forEach(pathData => {
-                    if (!pathData.points || pathData.points.length < 2) return;
-                    
-                    const color = pathData.color || '#ffaa44';
-                    const points = pathData.points.map(p => new THREE.Vector3(p.x, p.y, p.z));
-                    
-                    for (let i = 0; i < points.length - 1; i++) {
-                        const start = points[i];
-                        const end = points[i + 1];
-                        
-                        const cylinder = createPathSegment(start, end, color, pathData.type);
-                        if (cylinder) {
-                            cylinder.visible = false;
-                            scene3D.add(cylinder);
-                            allPaths.push(cylinder);
-                        }
-                    }
-                });
-
-                console.log('✅ تم بناء', allPaths.length, 'مقطع مسار (مخفي افتراضياً)');
-            }
-            
-            if (sceneData.hotspots) {
-                console.log(`🔴 بناء ${sceneData.hotspots.length} نقطة ساخنة`);
-                sceneData.hotspots.forEach(h => {
-                    const el = createHotspotElement(0, 0, h.type, h.data);
-                    
-                    el._worldPosition = new THREE.Vector3(
-                        h.position.x,
-                        h.position.y,
-                        h.position.z
-                    );
-                    
-                    document.body.appendChild(el);
-                    
-                    if (h.id) {
-                        hotspotMarkers[h.id] = el;
-                    } else {
-                        const tempId = 'hotspot_' + Math.random().toString(36).substr(2, 9);
-                        hotspotMarkers[tempId] = el;
-                    }
-                });
-            }
-            
-            loadMeasurements(sceneData);
-            updateSceneList();
-            sceneLoader.preloadNextScene(index);
-            
-            console.log(`✅ تم تحميل المشهد ${index}: ${sceneData.name}`);
-        }
-        
-        // ===== دالة التهيئة الرئيسية =====
-        async function init() {
-            scene3D = new THREE.Scene();
-            scene3D.background = new THREE.Color(0x000000);
-            
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 0, 0.1);
-            
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            document.getElementById('container').appendChild(renderer.domElement);
-            
-            scene3D.add(new THREE.AmbientLight(0xffffff, 1.5));
-            
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableZoom = true;
-            controls.enablePan = false;
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.autoRotate = autoRotate;
-            controls.autoRotateSpeed = 0.5;
-            controls.enableRotate = true;
-            
-            const rotateBtn = document.getElementById('autoRotateBtn');
-            if (rotateBtn) {
-                rotateBtn.onclick = () => {
-                    autoRotate = !autoRotate;
-                    controls.autoRotate = autoRotate;
-                    rotateBtn.textContent = autoRotate ? '⏸️ Rotation OFF' : '▶️ Rotation ON';
-                };
-            }
-            
-            const measBtn = document.getElementById('toggleMeasurements');
-            if (measBtn) {
-                measBtn.onclick = () => {
-                    showMeasurements = !showMeasurements;
-                    measBtn.textContent = showMeasurements ? '📏 Hide Meas' : '📏 Show Meas';
-                    
-                    measurementElements.forEach(e => {
-                        if (e.line) e.line.style.display = showMeasurements ? 'block' : 'none';
-                        if (e.start) e.start.style.display = showMeasurements ? 'block' : 'none';
-                        if (e.end) e.end.style.display = showMeasurements ? 'block' : 'none';
-                        if (e.label) e.label.style.display = showMeasurements ? 'block' : 'none';
-                    });
-                };
-            }
-            
-            createPathsTogglePanel();
-            
-            await sceneLoader.loadManifest();
-            updateSceneList();
-            
-            if (sceneLoader.scenes.length > 0) {
-                await loadScene(0);
-            }
-            
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.hotspot-marker') && !e.target.closest('#infoPanel')) {
-                    hideInfoPanel();
-                }
-            });
-            // ===== التحكم بعناصر الهاتف المحمول (نسخة محسنة) =====
-// ===== التحكم بعناصر الهاتف المحمول (نسخة محسنة مع إغلاق تلقائي) =====
-const isMobile = window.innerWidth <= 768;
-
-if (isMobile) {
-    const sceneListPanel = document.getElementById('sceneListPanel');
-    const pathsPanel = document.getElementById('pathsPanel');
-    const toggleSceneBtn = document.getElementById('toggleSceneListBtn');
-    const togglePathsBtn = document.getElementById('togglePathsPanelBtn');
-    const mobileControls = document.getElementById('mobileControls');
-    
-    // إظهار أزرار التحكم
-    if (mobileControls) mobileControls.style.display = 'flex';
-    
-    // تهيئة الحالة الأولية: القوائم مخفية
-    if (sceneListPanel) {
-        sceneListPanel.classList.add('hidden');
-    }
-    if (pathsPanel) {
-        pathsPanel.classList.remove('show');
-    }
-    
-    // زر قائمة المشاهد
-    if (toggleSceneBtn) {
-        toggleSceneBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            // إذا كانت المسارات مفتوحة، أغلقها أولاً
-            if (pathsPanel.classList.contains('show')) {
-                pathsPanel.classList.remove('show');
-            }
-            
-            // افتح/أغلق قائمة المشاهد
-            sceneListPanel.classList.toggle('hidden');
-        });
-    }
-    
-    // زر لوحة المسارات
-    if (togglePathsBtn) {
-        togglePathsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            // إذا كانت المشاهد مفتوحة، أغلقها أولاً
-            if (!sceneListPanel.classList.contains('hidden')) {
-                sceneListPanel.classList.add('hidden');
-            }
-            
-            // افتح/أغلق لوحة المسارات
-            pathsPanel.classList.toggle('show');
-        });
-    }
-    
-    // إغلاق القوائم عند النقر خارجها
-    document.addEventListener('click', function(e) {
-        // إذا كانت قائمة المشاهد مفتوحة والنقر ليس عليها ولا على زرها
-        if (!sceneListPanel.classList.contains('hidden')) {
-            if (!sceneListPanel.contains(e.target) && !toggleSceneBtn.contains(e.target)) {
-                sceneListPanel.classList.add('hidden');
-            }
-        }
-        
-        // إذا كانت لوحة المسارات مفتوحة والنقر ليس عليها ولا على زرها
-        if (pathsPanel.classList.contains('show')) {
-            if (!pathsPanel.contains(e.target) && !togglePathsBtn.contains(e.target)) {
-                pathsPanel.classList.remove('show');
-            }
-        }
-    });
-    
-    // منع إغلاق النوافذ عند النقر داخل المحتوى
-    if (sceneListPanel) {
-        sceneListPanel.addEventListener('click', (e) => e.stopPropagation());
-    }
-    if (pathsPanel) {
-        pathsPanel.addEventListener('click', (e) => e.stopPropagation());
-    }
-    
-    // عند النقر على مشهد، نخفي القائمة
-    const sceneList = document.getElementById('sceneList');
-    if (sceneList) {
-        sceneList.addEventListener('click', (e) => {
-            if (e.target.closest('.scene-item')) {
-                sceneListPanel.classList.add('hidden');
-            }
-        });
-    }
-} else {
-    // وضع الكمبيوتر: نظهر كل شيء طوال الوقت
-    const sceneListPanel = document.getElementById('sceneListPanel');
-    const pathsPanel = document.getElementById('pathsPanel');
-    const mobileControls = document.getElementById('mobileControls');
-    
-    if (sceneListPanel) {
-        sceneListPanel.classList.remove('hidden');
-    }
-    if (pathsPanel) {
-        pathsPanel.classList.remove('show');
-        pathsPanel.style.display = 'block';
-    }
-    if (mobileControls) mobileControls.style.display = 'none';
-}
-
-// مستمع حدث تغيير حجم النافذة
-window.addEventListener('resize', onWindowResize, false);
-
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    
-    const mobileControls = document.getElementById('mobileControls');
-    const sceneListPanel = document.getElementById('sceneListPanel');
-    const pathsPanel = document.getElementById('pathsPanel');
-    
-    if (window.innerWidth <= 768) {
-        // وضع الهاتف
-        if (mobileControls) mobileControls.style.display = 'flex';
-        
-        // نخفي القوائم عند التحول للهاتف
-        if (sceneListPanel) {
-            sceneListPanel.classList.add('hidden');
-            sceneListPanel.style.display = 'flex';
-        }
-        if (pathsPanel) {
-            pathsPanel.classList.remove('show');
-            pathsPanel.style.display = 'block';
-        }
-    } else {
-        // وضع الكمبيوتر
-        if (mobileControls) mobileControls.style.display = 'none';
-        
-        // نظهر كل شيء في الكمبيوتر
-        if (sceneListPanel) {
-            sceneListPanel.classList.remove('hidden');
-            sceneListPanel.style.display = 'flex';
-        }
-        if (pathsPanel) {
-            pathsPanel.classList.remove('show');
-            pathsPanel.style.display = 'block';
-        }
-    }
-}
-
-            function animate() {
-                requestAnimationFrame(animate);
-                
-                if (controls) controls.update();
-                
-                if (renderer && scene3D && camera) {
-                    renderer.render(scene3D, camera);
-                }
-                
-                updateHotspotsPosition();
-                updateMeasurementPositions();
-            }
-            
-            animate();
-            
-            console.log('✅ تم تهيئة التطبيق بنجاح');
-        document.addEventListener('click', function(e) {
-
-    const sceneListPanel = document.getElementById('sceneListPanel');
-    const pathsPanel = document.getElementById('pathsPanel');
-    const toggleSceneBtn = document.getElementById('toggleSceneListBtn');
-    const togglePathsBtn = document.getElementById('togglePathsPanelBtn');
-
-    if (window.innerWidth <= 768) {
-
-        if (!sceneListPanel.contains(e.target) && !toggleSceneBtn.contains(e.target)) {
-            sceneListPanel.classList.add('hidden');
-        }
-
-       if (!pathsPanel.contains(e.target) && !togglePathsBtn.contains(e.target)) {
-    pathsPanel.classList.remove('show');
-}
-
-}
-
-});
-
-}
-
-// تعريف المتغير العام sceneLoader
-const sceneLoader = new SceneLoader();
-
-// بدء التطبيق
-init();
-
-
-// ===== إضافة خاصية إغلاق النوافذ عند النقر خارجها للهاتف =====
-setTimeout(function () {
-
-    // التحقق إذا كان الهاتف
-    const isMobile = window.innerWidth <= 768;
-
-    if (isMobile) {
-
-        const sceneListPanel = document.getElementById('sceneListPanel');
-        const pathsPanel = document.getElementById('pathsPanel');
-        const toggleSceneBtn = document.getElementById('toggleSceneListBtn');
-        const togglePathsBtn = document.getElementById('togglePathsPanelBtn');
-
-        // التأكد من وجود العناصر
-        if (!sceneListPanel || !pathsPanel || !toggleSceneBtn || !togglePathsBtn) {
-            console.log('❌ عناصر التحكم غير موجودة');
-            return;
-        }
-
-        // إغلاق القوائم عند النقر خارجها
-        document.addEventListener('click', function (e) {
-
-            if (!sceneListPanel.classList.contains('hidden')) {
-                if (!sceneListPanel.contains(e.target) && !toggleSceneBtn.contains(e.target)) {
-                    sceneListPanel.classList.add('hidden');
-                }
-            }
-
-            if (pathsPanel.classList.contains('show')) {
-                if (!pathsPanel.contains(e.target) && !togglePathsBtn.contains(e.target)) {
-                    pathsPanel.classList.remove('show');
-                }
-            }
-
-        });
-
-        // منع إغلاق النوافذ عند النقر داخلها
-        sceneListPanel.addEventListener('click', function (e) {
-            e.stopPropagation();
-        });
-
-        pathsPanel.addEventListener('click', function (e) {
-            e.stopPropagation();
-        });
-
-        console.log('📱 تم تفعيل خاصية إغلاق النوافذ للهاتف');
-
-    }
-
-}, 500);
-</script>
-
-
-<!-- لوحة المعلومات -->
-<div id="infoPanel"></div>
-
-<!-- أزرار الهاتف -->
-<div id="mobileControls" style="display: none; position: fixed; bottom: 150px; left: 10px; z-index: 950; flex-direction: column; gap: 8px;">
-    
-<button id="toggleSceneListBtn" style="background: rgba(20,30,40,0.8); backdrop-filter: blur(12px); color: white; border: 1px solid rgba(74,108,143,0.5); border-radius: 30px; width: 44px; height: 44px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;">📋</button>
-
-<button id="togglePathsPanelBtn" style="background: rgba(20,30,40,0.8); backdrop-filter: blur(12px); color: white; border: 1px solid rgba(74,108,143,0.5); border-radius: 30px; width: 44px; height: 44px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;">🔘</button>
-
-</div>
-
+    <\/script>
 </body>
-</html>
-`;
-    }
+</html>`;
+}
 
     generatePlayerCSS() {
         return `body { margin:0; overflow:hidden; font-family:Arial,sans-serif; }
