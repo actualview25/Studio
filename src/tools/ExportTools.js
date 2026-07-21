@@ -185,8 +185,7 @@ export class ExportTools {
             console.log(`📁 تم إنشاء ملف المشهد ${i}: ${scene.name}`);
         }
     }
-
- generatePlayerHTML(projectName) {
+    generatePlayerHTML(projectName) {
     return `<!DOCTYPE html>
 <html lang="ar">
 <head>
@@ -638,237 +637,235 @@ export class ExportTools {
         <div class="scene-list" id="sceneList"></div>
     </div>
 
-    <script>`;
-   // =======================================
+    <script>
+        // =======================================
         // دوال مساعدة للمسارات والقياسات
-        // =======================================
-        
+        // =======================================`;
         function createPathSegment(start, end, color, type) {
-            const direction = new THREE.Vector3().subVectors(end, start);
-            const distance = direction.length();
-            
-            if (distance < 0.5) return null;
-            
-            const startDir = start.clone().normalize();
-            const endDir = end.clone().normalize();
-            const offsetStart = startDir.multiplyScalar(505);
-            const offsetEnd = endDir.multiplyScalar(505);
-            
-            const cylinder = new THREE.Mesh(
-                new THREE.CylinderGeometry(3.5, 3.5, distance, 12),
-                new THREE.MeshStandardMaterial({ 
-                    color: color,
-                    emissive: color,
-                    emissiveIntensity: 0.4,
-                    depthTest: false,
-                    depthWrite: false
-                })
-            );
-            
-            cylinder.renderOrder = 999;
-            
-            const midPoint = new THREE.Vector3().addVectors(offsetStart, offsetEnd).multiplyScalar(0.5);
-            cylinder.position.copy(midPoint);
-            
-            cylinder.quaternion.setFromUnitVectors(
-                new THREE.Vector3(0, 1, 0),
-                direction.clone().normalize()
-            );
-            
-            cylinder.userData = { type: type };
-            
-            return cylinder;
+    const direction = new THREE.Vector3().subVectors(end, start);
+    const distance = direction.length();
+    
+    if (distance < 0.5) return null;
+    
+    const startDir = start.clone().normalize();
+    const endDir = end.clone().normalize();
+    const offsetStart = startDir.multiplyScalar(505);
+    const offsetEnd = endDir.multiplyScalar(505);
+    
+    const cylinder = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.5, 3.5, distance, 12),
+        new THREE.MeshStandardMaterial({ 
+            color: color,
+            emissive: color,
+            emissiveIntensity: 0.4,
+            depthTest: false,
+            depthWrite: false
+        })
+    );
+    
+    cylinder.renderOrder = 999;
+    
+    const midPoint = new THREE.Vector3().addVectors(offsetStart, offsetEnd).multiplyScalar(0.5);
+    cylinder.position.copy(midPoint);
+    
+    cylinder.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        direction.clone().normalize()
+    );
+    
+    cylinder.userData = { type: type };
+    
+    return cylinder;
+}
+
+function createMeasurementElement(m) {
+    const line = document.createElement('div'); 
+    line.className = 'measurement-line'; 
+    line.style.display = 'none';
+    
+    const start = document.createElement('div'); 
+    start.className = 'measurement-point'; 
+    start.style.display = 'none';
+    
+    const end = document.createElement('div'); 
+    end.className = 'measurement-point'; 
+    end.style.display = 'none';
+    
+    const label = document.createElement('div'); 
+    label.className = 'measurement-label'; 
+    label.textContent = m.length + ' م'; 
+    label.style.display = 'none';
+    
+    line._start = new THREE.Vector3(m.start.x, m.start.y, m.start.z);
+    line._end = new THREE.Vector3(m.end.x, m.end.y, m.end.z);
+    start._worldPos = new THREE.Vector3(m.start.x, m.start.y, m.start.z);
+    end._worldPos = new THREE.Vector3(m.end.x, m.end.y, m.end.z);
+    label._worldPos = new THREE.Vector3().addVectors(start._worldPos, end._worldPos).multiplyScalar(0.5);
+    
+    document.body.appendChild(line); 
+    document.body.appendChild(start); 
+    document.body.appendChild(end); 
+    document.body.appendChild(label);
+    
+    return { line, start, end, label };
+}
+
+// =======================================
+// نظام تحميل المشاهد الذكي
+// =======================================
+
+class SceneLoader {
+    constructor() {
+        this.manifest = null;
+        this.scenes = [];
+        this.loadedScenes = new Map();
+        this.currentSceneIndex = 0;
+        this.isLoading = false;
+    }
+    
+    async loadManifest() {
+        try {
+            const response = await fetch('manifest.json');
+            this.manifest = await response.json();
+            this.scenes = this.manifest.scenes;
+            console.log(\`📋 تم تحميل manifest مع \${this.scenes.length} مشهد\`);
+            return this.scenes;
+        } catch (error) {
+            console.error('❌ فشل تحميل manifest:', error);
+            return [];
         }
+    }
 
-        function createMeasurementElement(m) {
-            const line = document.createElement('div'); 
-            line.className = 'measurement-line'; 
-            line.style.display = 'none';
-            
-            const start = document.createElement('div'); 
-            start.className = 'measurement-point'; 
-            start.style.display = 'none';
-            
-            const end = document.createElement('div'); 
-            end.className = 'measurement-point'; 
-            end.style.display = 'none';
-            
-            const label = document.createElement('div'); 
-            label.className = 'measurement-label'; 
-            label.textContent = m.length + ' م'; 
-            label.style.display = 'none';
-            
-            line._start = new THREE.Vector3(m.start.x, m.start.y, m.start.z);
-            line._end = new THREE.Vector3(m.end.x, m.end.y, m.end.z);
-            start._worldPos = new THREE.Vector3(m.start.x, m.start.y, m.start.z);
-            end._worldPos = new THREE.Vector3(m.end.x, m.end.y, m.end.z);
-            label._worldPos = new THREE.Vector3().addVectors(start._worldPos, end._worldPos).multiplyScalar(0.5);
-            
-            document.body.appendChild(line); 
-            document.body.appendChild(start); 
-            document.body.appendChild(end); 
-            document.body.appendChild(label);
-            
-            return { line, start, end, label };
-        }
-
-        // =======================================
-        // نظام تحميل المشاهد الذكي
-        // =======================================
-
-        class SceneLoader {
-            constructor() {
-                this.manifest = null;
-                this.scenes = [];
-                this.loadedScenes = new Map();
-                this.currentSceneIndex = 0;
-                this.isLoading = false;
-            }
-            
-            async loadManifest() {
-                try {
-                    const response = await fetch('manifest.json');
-                    this.manifest = await response.json();
-                    this.scenes = this.manifest.scenes;
-                    console.log(\`📋 تم تحميل manifest مع \${this.scenes.length} مشهد\`);
-                    return this.scenes;
-                } catch (error) {
-                    console.error('❌ فشل تحميل manifest:', error);
-                    return [];
-                }
-            }
-
-            async loadScene(index) {
-                if (this.isLoading) return null;
-                
-                if (this.loadedScenes.has(index)) {
-                    console.log(\`✅ مشهد \${index} من الذاكرة المخبأة\`);
-                    return this.loadedScenes.get(index);
-                }
-                
-                this.isLoading = true;
-                
-                try {
-                    const sceneInfo = this.scenes[index];
-                    if (!sceneInfo) throw new Error(\`المشهد \${index} غير موجود\`);
-                    
-                    console.log(\`📥 تحميل المشهد \${index}: \${sceneInfo.name}\`);
-                    const response = await fetch(sceneInfo.data);
-                    const sceneData = await response.json();
-                    
-                    this.loadedScenes.set(index, sceneData);
-                    this.cleanupCache(index);
-                    
-                    this.isLoading = false;
-                    return sceneData;
-                    
-                } catch (error) {
-                    console.error(\`❌ فشل تحميل المشهد \${index}:\`, error);
-                    this.isLoading = false;
-                    return null;
-                }
-            }
-            cleanupCache(currentIndex) {
-                const indicesToKeep = [currentIndex - 1, currentIndex, currentIndex + 1]
-                    .filter(i => i >= 0 && i < this.scenes.length);
-                
-                for (let [index] of this.loadedScenes) {
-                    if (!indicesToKeep.includes(index)) {
-                        console.log(\`🧹 تفريغ المشهد \${index} من الذاكرة\`);
-                        this.loadedScenes.delete(index);
-                    }
-                }
-            }
-            
-            preloadNextScene(currentIndex) {
-                if (currentIndex + 1 < this.scenes.length) {
-                    setTimeout(() => {
-                        if (!this.loadedScenes.has(currentIndex + 1)) {
-                            this.loadScene(currentIndex + 1);
-                        }
-                    }, 1000);
-                }
-            }
+    async loadScene(index) {
+        if (this.isLoading) return null;
+        
+        if (this.loadedScenes.has(index)) {
+            console.log(\`✅ مشهد \${index} من الذاكرة المخبأة\`);
+            return this.loadedScenes.get(index);
         }
         
-        // ===== المتغيرات العامة =====
-        const ICONS = { 
-            hotspot: 'icon/hotspot.png', 
-            info: 'icon/info.png' 
-        };
+        this.isLoading = true;
         
-        let autoRotate = true;
-        let currentSceneIndex = 0;
-        let scene3D, camera, renderer, controls, sphereMesh;
-        let allPaths = [];
-        let hotspotMarkers = {};
-        let measurementElements = [];
-        let showMeasurements = false;
-        
-        const pathColors = { EL: '#ffcc00', AC: '#00ccff', WP: '#0066cc', WA: '#ff3300', GS: '#33cc33' };
-
-        // ===== دوال القياس =====
-        function updateMeasurementPositions() {
-            if (!camera) return;
-            const w = window.innerWidth, h = window.innerHeight;
+        try {
+            const sceneInfo = this.scenes[index];
+            if (!sceneInfo) throw new Error(\`المشهد \${index} غير موجود\`);
             
-            measurementElements.forEach(e => {
-                if (!e.line?._start) return;
-                
-                const s = e.line._start.clone().project(camera);
-                const e2 = e.line._end.clone().project(camera);
-                
-                if (s.z > 1 || e2.z > 1 || s.z < -1 || e2.z < -1) { 
-                    e.line.style.display = 'none';
-                    e.start.style.display = 'none';
-                    e.end.style.display = 'none';
-                    e.label.style.display = 'none';
-                    return; 
-                }
-                
-                const x1 = (s.x * 0.5 + 0.5) * w, y1 = (-s.y * 0.5 + 0.5) * h;
-                const x2 = (e2.x * 0.5 + 0.5) * w, y2 = (-e2.y * 0.5 + 0.5) * h;
-                const dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx*dx + dy*dy);
-                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-                
-                const shouldShow = showMeasurements;
-                
-                e.line.style.display = shouldShow ? 'block' : 'none';
-                e.line.style.left = x1 + 'px'; 
-                e.line.style.top = y1 + 'px';
-                e.line.style.width = len + 'px'; 
-                e.line.style.transform = 'rotate(' + angle + 'deg)';
-                
-                e.start.style.display = shouldShow ? 'block' : 'none';
-                e.start.style.left = x1 + 'px'; 
-                e.start.style.top = y1 + 'px';
-                
-                e.end.style.display = shouldShow ? 'block' : 'none';
-                e.end.style.left = x2 + 'px'; 
-                e.end.style.top = y2 + 'px';
-                
-                const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-                e.label.style.display = shouldShow ? 'block' : 'none';
-                e.label.style.left = mx + 'px'; 
-                e.label.style.top = (my - 30) + 'px';
-            });
+            console.log(\`📥 تحميل المشهد \${index}: \${sceneInfo.name}\`);
+            const response = await fetch(sceneInfo.data);
+            const sceneData = await response.json();
+            
+            this.loadedScenes.set(index, sceneData);
+            this.cleanupCache(index);
+            
+            this.isLoading = false;
+            return sceneData;
+            
+        } catch (error) {
+            console.error(\`❌ فشل تحميل المشهد \${index}:\`, error);
+            this.isLoading = false;
+            return null;
         }
-
-        function loadMeasurements(sceneData) {
-            measurementElements.forEach(e => {
-                if(e.line) e.line.remove();
-                if(e.start) e.start.remove();
-                if(e.end) e.end.remove();
-                if(e.label) e.label.remove();
-            });
-            
-            measurementElements = [];
-            
-            if (sceneData.measurements) {
-                sceneData.measurements.forEach(m => measurementElements.push(createMeasurementElement(m)));
+    }
+    cleanupCache(currentIndex) {
+        const indicesToKeep = [currentIndex - 1, currentIndex, currentIndex + 1]
+            .filter(i => i >= 0 && i < this.scenes.length);
+        
+        for (let [index] of this.loadedScenes) {
+            if (!indicesToKeep.includes(index)) {
+                console.log(\`🧹 تفريغ المشهد \${index} من الذاكرة\`);
+                this.loadedScenes.delete(index);
             }
         }
-    <\/script>
+    }
+    
+    preloadNextScene(currentIndex) {
+        if (currentIndex + 1 < this.scenes.length) {
+            setTimeout(() => {
+                if (!this.loadedScenes.has(currentIndex + 1)) {
+                    this.loadScene(currentIndex + 1);
+                }
+            }, 1000);
+        }
+    }
+}`;
+            // ===== المتغيرات العامة =====
+const ICONS = { 
+    hotspot: 'icon/hotspot.png', 
+    info: 'icon/info.png' 
+};
+
+let autoRotate = true;
+let currentSceneIndex = 0;
+let scene3D, camera, renderer, controls, sphereMesh;
+let allPaths = [];
+let hotspotMarkers = {};
+let measurementElements = [];
+let showMeasurements = false;
+
+const pathColors = { EL: '#ffcc00', AC: '#00ccff', WP: '#0066cc', WA: '#ff3300', GS: '#33cc33' };
+
+// ===== دوال القياس =====
+function updateMeasurementPositions() {
+    if (!camera) return;
+    const w = window.innerWidth, h = window.innerHeight;
+    
+    measurementElements.forEach(e => {
+        if (!e.line?._start) return;
+        
+        const s = e.line._start.clone().project(camera);
+        const e2 = e.line._end.clone().project(camera);
+        
+        if (s.z > 1 || e2.z > 1 || s.z < -1 || e2.z < -1) { 
+            e.line.style.display = 'none';
+            e.start.style.display = 'none';
+            e.end.style.display = 'none';
+            e.label.style.display = 'none';
+            return; 
+        }
+        
+        const x1 = (s.x * 0.5 + 0.5) * w, y1 = (-s.y * 0.5 + 0.5) * h;
+        const x2 = (e2.x * 0.5 + 0.5) * w, y2 = (-e2.y * 0.5 + 0.5) * h;
+        const dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx*dx + dy*dy);
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        
+        const shouldShow = showMeasurements;
+        
+        e.line.style.display = shouldShow ? 'block' : 'none';
+        e.line.style.left = x1 + 'px'; 
+        e.line.style.top = y1 + 'px';
+        e.line.style.width = len + 'px'; 
+        e.line.style.transform = 'rotate(' + angle + 'deg)';
+        
+        e.start.style.display = shouldShow ? 'block' : 'none';
+        e.start.style.left = x1 + 'px'; 
+        e.start.style.top = y1 + 'px';
+        
+        e.end.style.display = shouldShow ? 'block' : 'none';
+        e.end.style.left = x2 + 'px'; 
+        e.end.style.top = y2 + 'px';
+        
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+        e.label.style.display = shouldShow ? 'block' : 'none';
+        e.label.style.left = mx + 'px'; 
+        e.label.style.top = (my - 30) + 'px';
+    });
+}
+
+function loadMeasurements(sceneData) {
+    measurementElements.forEach(e => {
+        if(e.line) e.line.remove();
+        if(e.start) e.start.remove();
+        if(e.end) e.end.remove();
+        if(e.label) e.label.remove();
+    });
+    
+    measurementElements = [];
+    
+    if (sceneData.measurements) {
+        sceneData.measurements.forEach(m => measurementElements.push(createMeasurementElement(m)));
+    }
+}`;
+<\/script>
 </body>
 </html>`;
 }
@@ -880,7 +877,7 @@ export class ExportTools {
     }
 
     generateReadme(projectName) {
-        return `# ${projectName}
+        return \`# \${projectName}
 
 ## جولة افتراضية ثلاثية الأبعاد
 
@@ -907,6 +904,7 @@ export class ExportTools {
 - \`scenes/\` - بيانات كل مشهد على حدة
 - \`images/\` - صور المشاهد
 - \`icon/\` - أيقونات النقاط
-`;
+\`;
     }
 }
+
