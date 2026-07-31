@@ -784,5 +784,4 @@ export class ExportTools {
 - \`icon/\` - أيقونات النقاط
 \`;
     }
- }
-} 
+}
