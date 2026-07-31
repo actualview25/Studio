@@ -1,3 +1,4 @@
+  
 // =======================================
 // ACTUAL VIEW STUDIO - EXPORT TOOLS
 // =======================================
@@ -72,64 +73,65 @@ export class ExportTools {
         iconFolder.file('info.png', infoBase64, { base64: true });
         console.log('✅ تم إضافة الأيقونات الافتراضية');
     }
+
     async createManifest(projectName, scenes, folder) {
-    const manifest = {
-        project: { name: projectName, date: new Date().toISOString(), version: "2.0", scenesCount: scenes.length },
-        scenes: scenes.map((scene, index) => ({
-            id: scene.id, index: index, name: scene.name,
-            image: `images/scene-${index}.jpg`, data: `scenes/scene-${index}.json`,
-            hotspotsCount: scene.hotspots?.length || 0,
-            pathsCount: scene.paths?.length || 0,
-            measurementsCount: scene.measurements?.length || 0,
-            hasPaths: (scene.paths?.length > 0),
-            hasHotspots: (scene.hotspots?.length > 0),
-            hasMeasurements: (scene.measurements?.length > 0)
-        })),
-        layers: { paths: ['EL','AC','WP','WA','GS'], measurements: ['length','height'], hotspots: ['SCENE','INFO'] }
-    };
-    folder.file('manifest.json', JSON.stringify(manifest, null, 2));
-    console.log(`📋 تم إنشاء manifest.json مع ${scenes.length} مشهد`);
-}
-
-async createSceneFiles(scenes, folder) {
-    const scenesFolder = folder.folder('scenes');
-    for (let i = 0; i < scenes.length; i++) {
-        const scene = scenes[i];
-        const sceneData = {
-            id: scene.id, index: i, name: scene.name, image: `images/scene-${i}.jpg`,
-            paths: (scene.paths || []).map(p => {
-                if (!p || typeof p !== 'object') return null;
-                return { type: p.type || 'unknown', color: p.color || '#ffaa44',
-                    points: (p.points || []).map(pt => ({ x: pt.x || 0, y: pt.y || 0, z: pt.z || 0 })) };
-            }).filter(p => p !== null),
-            hotspots: (scene.hotspots || []).map(h => {
-                if (!h || typeof h !== 'object') return null;
-                return { id: h.id || `hotspot-${Date.now()}`, type: h.type || 'INFO',
-                    position: { x: h.position?.x || 0, y: h.position?.y || 0, z: h.position?.z || 0 }, data: h.data || {} };
-            }).filter(h => h !== null),
-            measurements: (scene.measurements || []).map(m => {
-                if (!m || typeof m !== 'object') return null;
-                return { length: m.length || 0, height: m.height || 0,
-                    start: { x: m.start?.x || 0, y: m.start?.y || 0, z: m.start?.z || 0 },
-                    end: { x: m.end?.x || 0, y: m.end?.y || 0, z: m.end?.z || 0 } };
-            }).filter(m => m !== null)
+        const manifest = {
+            project: { name: projectName, date: new Date().toISOString(), version: "2.0", scenesCount: scenes.length },
+            scenes: scenes.map((scene, index) => ({
+                id: scene.id, index: index, name: scene.name,
+                image: `images/scene-${index}.jpg`, data: `scenes/scene-${index}.json`,
+                hotspotsCount: scene.hotspots?.length || 0,
+                pathsCount: scene.paths?.length || 0,
+                measurementsCount: scene.measurements?.length || 0,
+                hasPaths: (scene.paths?.length > 0),
+                hasHotspots: (scene.hotspots?.length > 0),
+                hasMeasurements: (scene.measurements?.length > 0)
+            })),
+            layers: { paths: ['EL','AC','WP','WA','GS'], measurements: ['length','height'], hotspots: ['SCENE','INFO'] }
         };
-        scenesFolder.file(`scene-${i}.json`, JSON.stringify(sceneData, null, 2));
-        console.log(`📁 تم إنشاء ملف المشهد ${i}: ${scene.name}`);
+        folder.file('manifest.json', JSON.stringify(manifest, null, 2));
+        console.log(`📋 تم إنشاء manifest.json مع ${scenes.length} مشهد`);
     }
-}
 
-async createTourData(scenes, folder) {
-    const tourData = scenes.map((scene, index) => ({
-        id: scene.id, name: scene.name, image: `scene-${index}.jpg`,
-        paths: scene.paths || [],
-        hotspots: scene.hotspots || [],
-        measurements: scene.measurements || []
-    }));
-    folder.file('tour-data.json', JSON.stringify(tourData, null, 2));
-    console.log('✅ تم إنشاء tour-data.json');
-}
-generatePlayerHTML(projectName, scenesCount) {
+    async createSceneFiles(scenes, folder) {
+        const scenesFolder = folder.folder('scenes');
+        for (let i = 0; i < scenes.length; i++) {
+            const scene = scenes[i];
+            const sceneData = {
+                id: scene.id, index: i, name: scene.name, image: `images/scene-${i}.jpg`,
+                paths: (scene.paths || []).map(p => {
+                    if (!p || typeof p !== 'object') return null;
+                    return { type: p.type || 'unknown', color: p.color || '#ffaa44',
+                        points: (p.points || []).map(pt => ({ x: pt.x || 0, y: pt.y || 0, z: pt.z || 0 })) };
+                }).filter(p => p !== null),
+                hotspots: (scene.hotspots || []).map(h => {
+                    if (!h || typeof h !== 'object') return null;
+                    return { id: h.id || `hotspot-${Date.now()}`, type: h.type || 'INFO',
+                        position: { x: h.position?.x || 0, y: h.position?.y || 0, z: h.position?.z || 0 }, data: h.data || {} };
+                }).filter(h => h !== null),
+                measurements: (scene.measurements || []).map(m => {
+                    if (!m || typeof m !== 'object') return null;
+                    return { length: m.length || 0, height: m.height || 0,
+                        start: { x: m.start?.x || 0, y: m.start?.y || 0, z: m.start?.z || 0 },
+                        end: { x: m.end?.x || 0, y: m.end?.y || 0, z: m.end?.z || 0 } };
+                }).filter(m => m !== null)
+            };
+            scenesFolder.file(`scene-${i}.json`, JSON.stringify(sceneData, null, 2));
+            console.log(`📁 تم إنشاء ملف المشهد ${i}: ${scene.name}`);
+        }
+    }
+
+    async createTourData(scenes, folder) {
+        const tourData = scenes.map((scene, index) => ({
+            id: scene.id, name: scene.name, image: `scene-${index}.jpg`,
+            paths: scene.paths || [],
+            hotspots: scene.hotspots || [],
+            measurements: scene.measurements || []
+        }));
+        folder.file('tour-data.json', JSON.stringify(tourData, null, 2));
+        console.log('✅ تم إنشاء tour-data.json');
+    }
+    generatePlayerHTML(projectName, scenesCount) {
         const mapPositions = [];
         const cols = Math.ceil(Math.sqrt(scenesCount));
         for (let i = 0; i < scenesCount; i++) {
@@ -203,9 +205,8 @@ generatePlayerHTML(projectName, scenesCount) {
 '        controls.enableZoom=true; controls.enablePan=false; controls.enableDamping=true; controls.dampingFactor=0.05; controls.autoRotate=true; controls.autoRotateSpeed=0.5; controls.rotateSpeed=0.5;\n' +
 '        let sphereMesh, currentSceneIndex=0, scenesList=[], hotspotMarkers=[], measurementElements=[], showMeasurements=false, sceneDataCache={};\n' +
 '        const ICONS = { hotspot: \'icon/hotspot.png\', info: \'icon/info.png\' };\n' +
-'        const sceneMapPositions = ' + positionsStr + ';\n';
-    }
-    '        function updateMapMarker() {\n' +
+'        const sceneMapPositions = ' + positionsStr + ';\n' +
+'        function updateMapMarker() {\n' +
 '            const pos = sceneMapPositions[currentSceneIndex];\n' +
 '            if (!pos) return;\n' +
 '            const marker = document.getElementById(\'mapMarker\');\n' +
@@ -257,8 +258,11 @@ generatePlayerHTML(projectName, scenesCount) {
 '        function clearMeasurements() { measurementElements.forEach(e => { if(e.line) e.line.remove(); if(e.start) e.start.remove(); if(e.end) e.end.remove(); if(e.label) e.label.remove(); }); measurementElements = []; }\n' +
 '        let allPaths = [];\n' +
 '        function clearPaths() { allPaths.forEach(p => scene.remove(p)); allPaths = []; }\n' +
-'        const pathColors = { EL: \'#ffcc00\', AC: \'#00ccff\', WP: \'#0066cc\', WA: \'#ff3300\', GS: \'#33cc33\' };\n' +
-'\n' +
+'        const pathColors = { EL: \'#ffcc00\', AC: \'#00ccff\', WP: \'#0066cc\', WA: \'#ff3300\', GS: \'#33cc33\' };\n';
+    }
+    // هذا الجزء هو تكملة generatePlayerHTML - يجب أن يتصل بالجزء 2 داخل نفس الدالة
+// احذف } الموجود في نهاية الجزء 2 وابدأ الجزء 3 مباشرة
+
 '        async function switchToScene(index) {\n' +
 '            if (index < 0 || index >= scenesList.length) return;\n' +
 '            currentSceneIndex = index;\n' +
@@ -314,10 +318,7 @@ generatePlayerHTML(projectName, scenesCount) {
 '                e.end.style.display=\'block\'; e.end.style.left=x2+\'px\'; e.end.style.top=y2+\'px\';\n' +
 '                e.label.style.display=\'block\'; e.label.style.left=((x1+x2)/2)+\'px\'; e.label.style.top=(((y1+y2)/2)-30)+\'px\';\n' +
 '            });\n' +
-'        }\n';
-    }
-    // هذا هو الجزء الأخير من generatePlayerHTML - يوضع بعد الجزء 4 مباشرة
-
+'        }\n' +
 '        async function loadData() {\n' +
 '            try { const r = await fetch(\'tour-data.json\'); const allData = await r.json();\n' +
 '                scenesList = allData.map((s, i) => ({ id: s.id, index: i, name: s.name }));\n' +
@@ -348,8 +349,7 @@ generatePlayerHTML(projectName, scenesCount) {
 '</body>\n' +
 '</html>';
     }
-
-    generatePlayerCSS() {
+generatePlayerCSS() {
         return `body { margin:0; overflow:hidden; font-family:Arial,sans-serif; }
 #container { width:100vw; height:100vh; background:#000; }
 .info { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.7); color:white; padding:10px 20px; border-radius:30px; }`;
@@ -386,4 +386,3 @@ generatePlayerHTML(projectName, scenesCount) {
 \`;
     }
 }
-    
