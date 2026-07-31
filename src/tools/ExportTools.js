@@ -1,4 +1,3 @@
-  
 // =======================================
 // ACTUAL VIEW STUDIO - EXPORT TOOLS
 // =======================================
@@ -131,6 +130,7 @@ export class ExportTools {
         folder.file('tour-data.json', JSON.stringify(tourData, null, 2));
         console.log('✅ تم إنشاء tour-data.json');
     }
+
     generatePlayerHTML(projectName, scenesCount) {
         const mapPositions = [];
         const cols = Math.ceil(Math.sqrt(scenesCount));
@@ -240,116 +240,7 @@ export class ExportTools {
 '            cylinder.position.copy(midPoint);\n' +
 '            cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());\n' +
 '            cylinder.userData = { type: type };\n' +
-'            return cylinder;\n' +
-'        }\n' +
-'\n' +
-'        function createMeasurementElement(m) {\n' +
-'            const line = document.createElement(\'div\'); line.className = \'measurement-line\'; line.style.display = \'none\';\n' +
-'            const start = document.createElement(\'div\'); start.className = \'measurement-point\'; start.style.display = \'none\';\n' +
-'            const end = document.createElement(\'div\'); end.className = \'measurement-point\'; end.style.display = \'none\';\n' +
-'            const label = document.createElement(\'div\'); label.className = \'measurement-label\'; label.textContent = m.length.toFixed(2) + \' m\'; label.style.display = \'none\';\n' +
-'            line._start = new THREE.Vector3(m.start.x, m.start.y, m.start.z); line._end = new THREE.Vector3(m.end.x, m.end.y, m.end.z);\n' +
-'            start._worldPos = line._start.clone(); end._worldPos = line._end.clone(); label._worldPos = new THREE.Vector3().addVectors(line._start, line._end).multiplyScalar(0.5);\n' +
-'            document.body.appendChild(line); document.body.appendChild(start); document.body.appendChild(end); document.body.appendChild(label);\n' +
-'            return { line, start, end, label };\n' +
-'        }\n' +
-'\n' +
-'        function clearHotspots() { hotspotMarkers.forEach(m => m.remove()); hotspotMarkers = []; }\n' +
-'        function clearMeasurements() { measurementElements.forEach(e => { if(e.line) e.line.remove(); if(e.start) e.start.remove(); if(e.end) e.end.remove(); if(e.label) e.label.remove(); }); measurementElements = []; }\n' +
-'        let allPaths = [];\n' +
-'        function clearPaths() { allPaths.forEach(p => scene.remove(p)); allPaths = []; }\n' +
-'        const pathColors = { EL: \'#ffcc00\', AC: \'#00ccff\', WP: \'#0066cc\', WA: \'#ff3300\', GS: \'#33cc33\' };\n';
-    }
-    // هذا الجزء هو تكملة generatePlayerHTML - يجب أن يتصل بالجزء 2 داخل نفس الدالة
-// احذف } الموجود في نهاية الجزء 2 وابدأ الجزء 3 مباشرة
-
-'        async function switchToScene(index) {\n' +
-'            if (index < 0 || index >= scenesList.length) return;\n' +
-'            currentSceneIndex = index;\n' +
-'            const info = scenesList[index];\n' +
-'            document.getElementById(\'sceneTitle\').textContent = info.name + \' ⏳\';\n' +
-'            let sceneData = sceneDataCache[index];\n' +
-'            if (!sceneData) {\n' +
-'                try { const resp = await fetch(\'scenes/scene-\' + index + \'.json\'); sceneData = await resp.json(); sceneDataCache[index] = sceneData; Object.keys(sceneDataCache).forEach(k => { if (Math.abs(parseInt(k) - index) > 2) delete sceneDataCache[k]; }); }\n' +
-'                catch (e) { console.error(\'❌ فشل:\', e); return; }\n' +
-'            }\n' +
-'            const fullPath = sceneData.image.includes(\'/\') ? sceneData.image : \'images/\' + sceneData.image;\n' +
-'            new THREE.TextureLoader().load(fullPath, (texture) => {\n' +
-'                texture.colorSpace = THREE.SRGBColorSpace; texture.wrapS = THREE.RepeatWrapping; texture.repeat.x = -1;\n' +
-'                if (sphereMesh) { if (sphereMesh.material.map) sphereMesh.material.map.dispose(); sphereMesh.material.map = texture; sphereMesh.material.needsUpdate = true; }\n' +
-'                else { sphereMesh = new THREE.Mesh(new THREE.SphereGeometry(500, 64, 64), new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide })); scene.add(sphereMesh); }\n' +
-'                clearHotspots(); clearMeasurements(); clearPaths(); showMeasurements = false;\n' +
-'                document.getElementById(\'toggleMeasurements\').textContent = \'📏 Show Measurements\';\n' +
-'                document.getElementById(\'sceneTitle\').textContent = info.name;\n' +
-'                if (sceneData.hotspots) sceneData.hotspots.forEach(h => hotspotMarkers.push(createHotspotMarker(h)));\n' +
-'                if (sceneData.measurements) sceneData.measurements.forEach(m => measurementElements.push(createMeasurementElement(m)));\n' +
-'                if (sceneData.paths && sceneData.paths.length > 0) {\n' +
-'                    sceneData.paths.forEach(pathData => {\n' +
-'                        if (!pathData.points || pathData.points.length < 2) return;\n' +
-'                        const color = pathData.color || \'#ffaa44\';\n' +
-'                        const points = pathData.points.map(p => new THREE.Vector3(p.x, p.y, p.z));\n' +
-'                        for (let i = 0; i < points.length - 1; i++) {\n' +
-'                            const cylinder = createPathSegment(points[i], points[i + 1], color, pathData.type);\n' +
-'                            if (cylinder) { cylinder.visible = true; scene.add(cylinder); allPaths.push(cylinder); }\n' +
-'                        }\n' +
-'                    });\n' +
-'                }\n' +
-'                document.querySelectorAll(\'.scene-item\').forEach((el, i) => el.classList.toggle(\'active\', i === index));\n' +
-'                if (window.innerWidth <= 768) document.getElementById(\'sceneListPanel\').classList.add(\'hidden\'); updateMapMarker();\n' +
-'            }, undefined, () => { document.getElementById(\'sceneTitle\').textContent = info.name; });\n' +
-'        }\n' +
-'\n' +
-'        function updateHotspotPositions() {\n' +
-'            const w = window.innerWidth, h = window.innerHeight;\n' +
-'            hotspotMarkers.forEach(m => { if (!m._worldPos) return; const pos = m._worldPos.clone().project(camera);\n' +
-'                if (pos.z>1||pos.z<-1) { m.style.display=\'none\'; return; } m.style.display=\'block\';\n' +
-'                m.style.left=((pos.x*0.5+0.5)*w)+\'px\'; m.style.top=((-pos.y*0.5+0.5)*h)+\'px\'; });\n' +
-'        }\n' +
-'\n' +
-'        function updateMeasurementPositions() {\n' +
-'            if (!camera || !showMeasurements) return;\n' +
-'            const w = window.innerWidth, h = window.innerHeight;\n' +
-'            measurementElements.forEach(e => { if (!e.line?._start) return;\n' +
-'                const s=e.line._start.clone().project(camera), e2=e.line._end.clone().project(camera);\n' +
-'                if (s.z>1||e2.z>1||s.z<-1||e2.z<-1) { e.line.style.display=\'none\'; e.start.style.display=\'none\'; e.end.style.display=\'none\'; e.label.style.display=\'none\'; return; }\n' +
-'                const x1=(s.x*0.5+0.5)*w, y1=(-s.y*0.5+0.5)*h, x2=(e2.x*0.5+0.5)*w, y2=(-e2.y*0.5+0.5)*h, dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy), angle=Math.atan2(dy,dx)*180/Math.PI;\n' +
-'                e.line.style.display=\'block\'; e.line.style.left=x1+\'px\'; e.line.style.top=y1+\'px\'; e.line.style.width=len+\'px\'; e.line.style.transform=\'rotate(\'+angle+\'deg)\';\n' +
-'                e.start.style.display=\'block\'; e.start.style.left=x1+\'px\'; e.start.style.top=y1+\'px\';\n' +
-'                e.end.style.display=\'block\'; e.end.style.left=x2+\'px\'; e.end.style.top=y2+\'px\';\n' +
-'                e.label.style.display=\'block\'; e.label.style.left=((x1+x2)/2)+\'px\'; e.label.style.top=(((y1+y2)/2)-30)+\'px\';\n' +
-'            });\n' +
-'        }\n' +
-'        async function loadData() {\n' +
-'            try { const r = await fetch(\'tour-data.json\'); const allData = await r.json();\n' +
-'                scenesList = allData.map((s, i) => ({ id: s.id, index: i, name: s.name }));\n' +
-'                buildSceneList(); if (scenesList.length > 0) switchToScene(0);\n' +
-'            } catch (e) { console.error(\'❌ فشل تحميل البيانات\'); }\n' +
-'        }\n' +
-'\n' +
-'        function buildSceneList() {\n' +
-'            const listEl = document.getElementById(\'sceneList\'); listEl.innerHTML = \'\';\n' +
-'            scenesList.forEach((s, i) => {\n' +
-'                const div = document.createElement(\'div\'); div.className = \'scene-item\' + (i===0?\' active\':\'\');\n' +
-'                div.innerHTML = \'<span class="scene-icon">🏗️</span><span class="scene-name">\'+s.name+\'</span>\';\n' +
-'                div.addEventListener(\'click\', () => switchToScene(i)); listEl.appendChild(div);\n' +
-'            });\n' +
-'        }\n' +
-'\n' +
-'        function animate() { requestAnimationFrame(animate); controls.update(); updateHotspotPositions(); updateMeasurementPositions(); renderer.render(scene, camera); }\n' +
-'\n' +
-'        document.getElementById(\'toggleMapBtn\').addEventListener(\'click\', () => { const m = document.getElementById(\'miniMap\'); const btn = document.getElementById(\'toggleMapBtn\'); if (m.style.display === \'none\') { m.style.display = \'block\'; btn.textContent = \'🗺️ Hide Map\'; } else { m.style.display = \'none\'; btn.textContent = \'🗺️ Show Map\'; } });\n' +
-'        document.getElementById(\'autoRotateBtn\').addEventListener(\'click\', function() { controls.autoRotate = !controls.autoRotate; this.textContent = controls.autoRotate ? \'⏸️ Stop Rotation\' : \'▶️ Start Rotation\'; });\n' +
-'        document.getElementById(\'toggleMeasurements\').addEventListener(\'click\', function() { showMeasurements = !showMeasurements; this.textContent = showMeasurements ? \'📏 Hide Measurements\' : \'📏 Show Measurements\'; if(!showMeasurements) measurementElements.forEach(e=>{if(e.line)e.line.style.display=\'none\'; if(e.start)e.start.style.display=\'none\'; if(e.end)e.end.style.display=\'none\'; if(e.label)e.label.style.display=\'none\';}); });\n' +
-'        document.getElementById(\'toggleSceneListBtn\').addEventListener(\'click\', (e) => { e.stopPropagation(); document.getElementById(\'sceneListPanel\').classList.toggle(\'hidden\'); });\n' +
-'        document.addEventListener(\'click\', (e) => { const p = document.getElementById(\'sceneListPanel\'); const b = document.getElementById(\'toggleSceneListBtn\'); if (window.innerWidth <= 768 && !p.classList.contains(\'hidden\') && !p.contains(e.target) && e.target !== b) p.classList.add(\'hidden\'); });\n' +
-'        window.addEventListener(\'resize\', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });\n' +
-'\n' +
-'        loadData(); animate();\n' +
-'    <\/script>\n' +
-'</body>\n' +
-'</html>';
-    }
-generatePlayerCSS() {
+'generatePlayerCSS() {
         return `body { margin:0; overflow:hidden; font-family:Arial,sans-serif; }
 #container { width:100vw; height:100vh; background:#000; }
 .info { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.7); color:white; padding:10px 20px; border-radius:30px; }`;
