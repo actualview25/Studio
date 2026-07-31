@@ -748,16 +748,15 @@ export class ExportTools {
 '</body>\n' +
 '</html>';
     }
-    generatePlayerCSS() {
+  generatePlayerCSS() {
         return `body { margin:0; overflow:hidden; font-family:Arial,sans-serif; }
 #container { width:100vw; height:100vh; background:#000; }
 .info { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.7); color:white; padding:10px 20px; border-radius:30px; }`;
     }
 
-   generateReadme(projectName) {
-        return `...`;
-    }
-}
+    generateReadme(projectName) {
+        return `# ${projectName}
+
 ## جولة افتراضية ثلاثية الأبعاد
 
 ### كيفية الاستخدام:
