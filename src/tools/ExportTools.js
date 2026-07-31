@@ -754,9 +754,10 @@ export class ExportTools {
 .info { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.7); color:white; padding:10px 20px; border-radius:30px; }`;
     }
 
-    generateReadme(projectName) {
-        return `# ${projectName}
-
+   generateReadme(projectName) {
+        return `...`;
+    }
+}
 ## جولة افتراضية ثلاثية الأبعاد
 
 ### كيفية الاستخدام:
